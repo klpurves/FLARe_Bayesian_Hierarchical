@@ -1,0 +1,322 @@
+---
+title: "Master notebook for metaRL project"
+output:
+  html_document:
+    df_print: paged
+  html_notebook: default
+  pdf_document: default
+---
+The settings for the script are below, note that ntrials is reset if the task is loaded in. Save after running to create a new notebook each time. 
+```{r}
+#clears environment
+rm(list=ls())
+
+#testing is TRUE means runs with less of everything for speed
+testing=FALSE
+
+# settings for script run 
+newtask=0 #set to 1 to create a new task
+taskname='task1' #either creates a task with this name, or loads in one with this name
+ntrials=100 #trials in task
+probability=0.75 #probability of each shape being rewarded/punished
+newchoices=1 #set to 1 to generate new participant choices
+participant_multiplier=10 #set to 10 to have ten times the participants in the original study, etc
+if (testing==TRUE) participant_multiplier=1
+
+# directories
+workingdir='N:/Alex/metaRL'
+scriptdir='N:/Alex/metaRL/scripts'
+datadir='N:/Alex/metaRL/simulated_data'
+taskdir='N:/Alex/metaRL/task/'
+
+# stan parameters
+#stanname='metaRL_2a1b.stan'
+chain_iter=2e4 # number of iterations for each chain inc. warmup (half)
+if (testing==TRUE) chain_iter=2e3
+chain_n=4 #4 chains
+if (testing==TRUE) chain_n=1
+```
+This loads the libraries and source files needed to run this script, and sets up RStan
+```{r}
+# libraries and source files 
+library('MASS')
+library('boot')
+library('matlab')
+library('dplyr')
+library('reshape')
+library('tidyr')
+library('rstan') 
+library('loo')
+
+#options for RSTAN
+options(mc.cores = parallel::detectCores())
+rstan_options(auto_write = TRUE)
+Sys.setenv(LOCAL_CPPFLAGS = '-march=native')
+Sys.getenv('LOCAL_CPPFLAGS') #should say '-march=native'
+
+#functions
+source('N:/Alex/metaRL/scripts/simulate_RL.R') #creates a normal distribution around params
+source('N:/Alex/metaRL/scripts/simulate_choices.R') #simulates participant choices using Q learning and softmax
+source('N:/Alex/metaRL/scripts/create_task.R') #creates task if necessary
+source('N:/Alex/metaRL/scripts/estimate_params.R') #recovers parameters
+source('N:/Alex/metaRL/scripts/create_sim_matrix.R')#creates the matrix of simulation outputs
+```
+This section of code creates a task (if the initial settings are newtask==1), or loads in the task values from previous runs. Typically, the task has 10,000 trials and 1 reversal, with a probability of 0.8. This is generated using the script 'create_task', which creates a simple reversal learning task. Wins and losses are coupled - if you don't 'win' by choosing one option, you lose; and if the shape you chose doesn't win, the other does. 
+
+```{r}
+# creates new task, or loads previously saved one
+ifelse(newtask==1, task<- create_task (ntrials, nreversals = 2, probability = probability), load(file.path(taskdir,taskname))) 
+if(newtask==0) {ntrials <- nrow(task)} #if loads in a task, sets ntrials to be the number of trials in that task
+save(task,file=file.path(taskdir,taskname))
+```
+
+Now, we simulate parameters from the Chase et al. 2009 paper. <br>
+Glossary: <br> aG = positive learning rate <br> aL = negative learning rate <br>
+tr = training phase <br> te = test phase <br> (not using test phase as this is PIT)
+pat = patient <br> con = control
+
+We use 10 times the number of participants in the original paper.
+```{r}
+# this part of the script simulates data from the Chase et al. 2009 paper
+
+npat_Chase=23*participant_multiplier #number of participants in Chase paper * multiplier (defined at top)
+ncon_Chase=23*participant_multiplier #ditto
+nsub_Chase=npat_Chase+ncon_Chase #total subs
+
+#probably going to ignore the test phase as not learning but PIT
+#positive learning rate for patients in training phase
+Chase_awin_pat <- simulate_RL (n = npat_Chase, est_m = 0.35, est_sd = 0.09) 
+
+#positive learning rate for controls in training phase
+Chase_awin_con <- simulate_RL (n = ncon_Chase, est_m = 0.23, est_sd = 0.06)
+
+#negative learning rate for patients in training phase
+Chase_aloss_pat <- simulate_RL (n = npat_Chase, est_m = 0.21, est_sd = 0.09)
+
+#negative learning rate for controls in training phase
+Chase_aloss_con <- simulate_RL (n = ncon_Chase, est_m = 0.24, est_sd = 0.08)
+
+#exploration/exploitation (essentially beta) for patients in training phase
+Chase_beta_pat <- simulate_RL (n = npat_Chase, est_m = 0.14, est_sd = 0.03)
+
+#exploration/exploitation (essentially beta) for controls in training phase
+Chase_beta_con <- simulate_RL (n = ncon_Chase, est_m = 0.13, est_sd = 0.02)
+
+```
+And generate data from the Kumar 2018 paper. 
+
+```{r}
+npat_Kumar=25*participant_multiplier #number of participants in Kumar paper * multiplier (defined at top)
+ncon_Kumar=26*participant_multiplier #ditto
+nsub_Kumar=npat_Kumar+ncon_Kumar #total subs for paper
+
+#positive learning rate for patients 
+Kumar_awin_pat <- simulate_RL (n = npat_Kumar, est_m = 0.28, est_sd = 0.14) 
+
+#positive learning rate for controls 
+Kumar_awin_con <- simulate_RL (n = ncon_Kumar, est_m = 0.31, est_sd = 0.14)
+
+#negative learning rate for patients
+Kumar_aloss_pat <- simulate_RL (n = npat_Kumar, est_m = 0.42, est_sd = 0.24)
+
+#negative learning rate for controls
+Kumar_aloss_con <- simulate_RL (n = ncon_Kumar, est_m = 0.38, est_sd = 0.23)
+
+#positive beta for patients 
+Kumar_betawin_pat <- simulate_RL (n = npat_Kumar, est_m = 0.13, est_sd = 0.15)
+
+#positive beta for controls 
+Kumar_betawin_con <- simulate_RL (n = ncon_Kumar, est_m = 0.11, est_sd = 0.16)
+
+#negative beta for patients
+Kumar_betaloss_pat <- simulate_RL (n = npat_Kumar, est_m = 0.19, est_sd = 0.20)
+
+#negative beta for controls
+Kumar_betaloss_con <- simulate_RL (n = ncon_Kumar, est_m = 0.23, est_sd = 0.17)
+```
+
+The below simulates patient choices using the simulated params from Chase et al. 2009
+```{r}
+#simulate 'participant' choices 
+
+if (newchoices==1){
+  temp1<- matrix(data=NA, nrow <- ntrials*(nsub_Chase), ncol<- 7)
+  temp2<- matrix(data=NA, nrow <- ntrials*(nsub_Kumar), ncol<- 7)
+  #patients Chase paper
+  for (pat in 1:npat_Chase){
+    choices<- simulate_choices (Chase_awin_pat[pat], Chase_aloss_pat[pat], Chase_beta_pat[pat],'empty', task) #null:no separate           betaloss
+    temp1<-create_sim_matrix(temp1,1,1,pat,task,choices,ntrials)
+    rm(choices)
+  }
+  #controls Chase paper
+  for (con in 1:ncon_Chase){
+    choices<- simulate_choices (Chase_awin_con[con], Chase_aloss_con[con], Chase_beta_con[con],'empty', task) 
+    temp1<-create_sim_matrix(temp1,1,0,npat_Chase+con,task,choices,ntrials)
+    rm(choices)
+  }
+  #patients Kumar paper
+    for (pat in 1:npat_Kumar){
+    choices<- simulate_choices (Kumar_awin_pat[pat], Kumar_aloss_pat[pat], Kumar_betawin_pat[pat],
+                                Kumar_betaloss_pat[pat],task)
+    temp2<-create_sim_matrix(temp2,2,1,pat,task,choices,ntrials)
+    rm(choices)
+  }
+  #controls Kumar paper
+  for (con in 1:ncon_Kumar){
+    choices<- simulate_choices (Kumar_awin_con[con], Kumar_aloss_con[con], Kumar_betawin_con[con],
+                                Kumar_betaloss_con[con],task)
+    temp2<-create_sim_matrix(temp2,2,0,npat_Kumar+con,task,choices,ntrials)
+    rm(choices)
+  }
+  simulated_data<-rbind(temp1,temp2)
+  rm(temp1,temp2)
+} else {
+  load('N:/Alex/metaRL/simulated_data/simulated_data')
+}
+
+```
+Now, we save the simulated data.
+```{r}
+save(simulated_data,file='N:/Alex/metaRL/simulated_data/simulated_data')
+
+```
+We want to see if the parameters are recoverable. Therefore, we need to go from these choices back to the parameters that generated them (this does this for the Chase paper).
+
+```{r}
+stanname='metaRL_Chase2.stan'
+stanfile <- file.path(scriptdir, stanname)
+
+simulated_data<-as.data.frame(simulated_data)
+colnames(simulated_data)<- c('study','pat/con','id','trial','reward','pun','choices')
+rm(rewardA,punA,choices)
+
+simulated_data_Chase<-subset(simulated_data,simulated_data$study==1) #Chase data
+
+rewardA <- select(simulated_data_Chase,c('id','trial','reward')) %>% spread(id, reward, fill = 0)
+rewardA$trial <- NULL
+punishA <- select(simulated_data_Chase,c('id','trial','pun')) %>% spread(id, pun, fill = 0)
+punishA$trial <- NULL
+choices <- select(simulated_data_Chase,c('id','trial','choices')) %>% spread(id, choices, fill = 0)
+choices$trial <- NULL
+
+Chase_data<-list(ntrials=ntrials,nsub=nsub_Chase,includeTrial = rep(1,ntrials),  rewardA=rewardA,punishA=punishA,choices=choices)
+
+Chase_fit <- stan(file = stanfile, data = Chase_data, iter=chain_iter, chains = chain_n) #add working dir?
+save(Chase_fit, file=file.path(datadir,'Chase_fit'))
+
+traceplot(Chase_fit,'lp__')
+
+# draws_Chase<- extract(Chase_fit)
+summary_Chase<- summary(Chase_fit)
+
+Chase_loglike<- extract_log_lik(Chase_fit, parameter_name = "loglik", merge_chains = TRUE)
+
+loo(Chase_loglike)
+
+overall_summary<-summary_Chase$summary #summary of all chains merged
+
+#puts output in form for correlations
+estimated_Chase_output<- matrix(data=NA, nrow <- nsub_Chase, ncol<- 6)
+rownames<-paste('alpha[',1:nsub_Chase,',1]',sep='')
+estimated_Chase_output[,1] <- overall_summary[c(rownames),'mean']
+rownames<-paste('alpha[',1:nsub_Chase,',1]',sep='')
+estimated_Chase_output[,2] <- overall_summary[c(rownames),'sd']
+rownames<-paste('alpha[',1:nsub_Chase,',2]',sep='')
+estimated_Chase_output[,3] <- overall_summary[c(rownames),'mean']
+rownames<-paste('alpha[',1:nsub_Chase,',2]',sep='')
+estimated_Chase_output[,4] <- overall_summary[c(rownames),'sd']
+rownames<-paste('beta[',1:nsub_Chase,']',sep='')
+estimated_Chase_output[,5] <- overall_summary[c(rownames),'mean']
+rownames<-paste('beta[',1:nsub_Chase,']',sep='')
+estimated_Chase_output[,6] <- overall_summary[c(rownames),'sd']
+
+#for positive learning rate
+cor.test(c(Chase_awin_pat,Chase_awin_con),estimated_Chase_output[,1]) #correlation
+lm(c(Chase_awin_pat,Chase_awin_con)~estimated_Chase_output[,1]) #regression equation
+plot(c(Chase_awin_pat,Chase_awin_con),estimated_Chase_output[,1]) #plot
+
+#for negative learning rate
+cor.test(c(Chase_aloss_pat,Chase_aloss_con),estimated_Chase_output[,3])
+lm(c(Chase_aloss_pat,Chase_aloss_con)~estimated_Chase_output[,3])
+plot(c(Chase_aloss_pat,Chase_aloss_con),estimated_Chase_output[,3])
+
+#for beta
+cor.test(c(Chase_beta_pat,Chase_beta_con),estimated_Chase_output[,5])
+lm(c(Chase_beta_pat,Chase_beta_con)~estimated_Chase_output[,5])
+plot(c(Chase_beta_pat,Chase_beta_con),estimated_Chase_output[,5])
+
+```
+And see if the parameters from Kumar paper are recoverable
+```{r}
+stanname='metaRL_Kumar.stan'
+stanfile <- file.path(scriptdir, stanname)
+
+simulated_data<-as.data.frame(simulated_data)
+colnames(simulated_data)<- c('study','pat/con','id','trial','reward','pun','choices')
+rm(rewardA,punishA,choices)
+
+simulated_data_Kumar<-subset(simulated_data,simulated_data$study==2) #Kumar data
+
+rewardA <- select(simulated_data_Kumar,c('id','trial','reward')) %>% spread(id, reward, fill = 0)
+rewardA$trial <- NULL
+punishA <- select(simulated_data_Kumar,c('id','trial','pun')) %>% spread(id, pun, fill = 0)
+punishA$trial <- NULL
+choices <- select(simulated_data_Kumar,c('id','trial','choices')) %>% spread(id, choices, fill = 0)
+choices$trial <- NULL
+
+Kumar_data<-list(ntrials=ntrials,nsub=nsub_Kumar,includeTrial = rep(1,ntrials),  rewardA=rewardA,punishA=punishA,choices=choices)
+
+Kumar_fit <- stan(file = stanfile, data = Kumar_data, iter=chain_iter, chains = chain_n) #add working dir?
+save(Kumar_fit, file=file.path(datadir,'Kumar_fit'))
+
+traceplot(Kumar_fit,'lp__')
+
+draws_Kumar<- extract(Kumar_fit)
+summary_Kumar<- summary(Kumar_fit)
+
+Kumar_loglike<- extract_log_lik(Kumar_fit, parameter_name = "loglik", merge_chains = TRUE)
+
+loo(Kumar_loglike)
+
+overall_summary<-summary_Kumar$summary #summary of all chains merged
+
+#puts output in format for correlations
+estimated_Kumar_output<- matrix(data=NA, nrow <- nsub_Kumar, ncol<- 8)
+rownames<-paste('alpha[',1:nsub_Kumar,',1]',sep='')
+estimated_Kumar_output[,1] <- overall_summary[c(rownames),'mean']
+rownames<-paste('alpha[',1:nsub_Kumar,',1]',sep='')
+estimated_Kumar_output[,2] <- overall_summary[c(rownames),'sd']
+rownames<-paste('alpha[',1:nsub_Kumar,',2]',sep='')
+estimated_Kumar_output[,3] <- overall_summary[c(rownames),'mean']
+rownames<-paste('alpha[',1:nsub_Kumar,',2]',sep='')
+estimated_Kumar_output[,4] <- overall_summary[c(rownames),'sd']
+rownames<-paste('beta[',1:nsub_Kumar,',1]',sep='')
+estimated_Kumar_output[,5] <- overall_summary[c(rownames),'mean']
+rownames<-paste('beta[',1:nsub_Kumar,',1]',sep='')
+estimated_Kumar_output[,6] <- overall_summary[c(rownames),'sd']
+rownames<-paste('beta[',1:nsub_Kumar,',2]',sep='')
+estimated_Kumar_output[,7] <- overall_summary[c(rownames),'mean']
+rownames<-paste('beta[',1:nsub_Kumar,',2]',sep='')
+estimated_Kumar_output[,8] <- overall_summary[c(rownames),'sd']
+
+#for positive learning rate
+cor.test(c(Kumar_awin_pat,Kumar_awin_con),estimated_Kumar_output[,1]) #correlation
+lm(c(Kumar_awin_pat,Kumar_awin_con)~estimated_Kumar_output[,1]) #regression equation
+plot(c(Kumar_awin_pat,Kumar_awin_con),estimated_Kumar_output[,1]) #plot
+
+#for negative learning rate
+cor.test(c(Kumar_aloss_pat,Kumar_aloss_con),estimated_Kumar_output[,3]) #correlation
+lm(c(Kumar_aloss_pat,Kumar_aloss_con)~estimated_Kumar_output[,3]) #regression equation
+plot(c(Kumar_aloss_pat,Kumar_aloss_con),estimated_Kumar_output[,3]) #plot
+
+#for beta win
+cor.test(c(Kumar_betawin_pat,Kumar_betawin_con),estimated_Kumar_output[,5]) #correlation
+lm(c(Kumar_betawin_pat,Kumar_betawin_con)~estimated_Kumar_output[,5]) #regression equation
+plot(c(Kumar_betawin_pat,Kumar_betawin_con),estimated_Kumar_output[,5]) #plot
+
+#for beta loss
+cor.test(c(Kumar_betaloss_pat,Kumar_betaloss_con),estimated_Kumar_output[,7]) #correlation
+lm(c(Kumar_betaloss_pat,Kumar_betaloss_con)~estimated_Kumar_output[,7]) #regression equation
+plot(c(Kumar_betaloss_pat,Kumar_betaloss_con),estimated_Kumar_output[,7]) #plot
+
+```

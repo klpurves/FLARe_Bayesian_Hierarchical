@@ -1,0 +1,113 @@
+---
+title: "hBayesDM tutorial work book"
+output: html_notebook
+---
+
+Work book for tutorials in the [hBayesDM paper](https://www.mitpressjournals.org/doi/full/10.1162/CPSY_a_00002) by Woo-Young, Haines & Zhang (2017).
+
+
+
+# Install RStan and hBayesDM
+
+#### RStan
+
+[RStan](https://github.com/stan-dev/rstan/wiki/RStan-Getting-Started)   
+
+Note that can do this via cran now (install.packages("rstan, dependencies = TRUE")), but the github version precompiles the Stan modules so should make it faster. 
+
+First checked and removed any other versions (then restart R):
+
+```{r}
+
+#remove.packages("rstan")
+#if (file.exists(".RData")) file.remove(".RData")
+
+```
+
+
+Initial download from github repo was fine using the following
+
+```{}
+
+# install.packages("rstan", repos = "https://cloud.r-project.org/", dependencies = TRUE)
+
+```
+
+Checked C++ chain using:
+
+```{r}
+
+# pkgbuild::has_build_tools(debug = TRUE)
+
+```
+Returns true, so all is well.
+
+Optional congifuration of toolchain to allow compiled (and faster!) stan packages. 
+
+```{r}
+
+# dotR <- file.path(Sys.getenv("HOME"), ".R")
+# if (!file.exists(dotR)) dir.create(dotR)
+# M <- file.path(dotR, ifelse(.Platform$OS.type == "windows", "Makevars.win", "Makevars"))
+# if (!file.exists(M)) file.create(M)
+# cat("\nCXX14FLAGS=-O3 -march=native -mtune=native",
+#     if( grepl("^darwin", R.version$os)) "CXX14FLAGS += -arch x86_64 -ftemplate-depth-256" else 
+#     if (.Platform$OS.type == "windows") "CXX11FLAGS=-O3 -march=native -mtune=native" else
+#     "CXX14FLAGS += -fPIC",
+#     file = M, sep = "\n", append = TRUE)
+
+```
+
+Permission error - cant seem to do this step. Wont try to hard right now - try adjust permission for /Users/kirstin/.R/Makevars and try again later.  Then run the above code once.
+
+Note that this step might cause issues for other programs in the future. if so go back to the STAN website for code to adjust C++ paramters again.  
+
+#### hBayesDM
+
+[hBayesDM](https://rstudio-pubs-static.s3.amazonaws.com/164729_b89284b8c9ad49e192567822fe1ecde3.html)  
+
+compilation failed for git version so used cran version
+
+```{r}
+
+# install.packages('hBayesDM', dependencies = T)
+```
+
+
+# Get familiar with basics
+
+### Explore data format
+
+Have a look at the example dataset to get familiar with what it should look like. (single .txt for all subjects)  
+
+from the website:
+
+>>>1. Prepare the data
+
+>>>For fitting a model with hBayesDM, all subjects’ data should be combined into a single text (*.txt) file. Look at the sample dataset and a help file (e.g., ?gng_m1) for each task and carefully follow the instructions.
+Subjects’ data must contain variables that are consistent with the column names specified in the help file, though extra variables are in practice allowed.
+It is okay if the number of trials is different across subjects. But there should exist no N/A data. If some trials contain N/A data (e.g., choice=NA in trial#10), remove the trials first.
+Sample data are available here, although users can fit a model with sample data without separately downloading them with one of the function arguments. Once the hBayesDM package is installed, sample data can be also retrieved from the package folder. Note that the file name of sample (example) data for a given task is taskName_exampleData.txt (e.g., dd_exampleData.txt, igt_exampleData.txt, gng_exampleData.txt, etc.). See each model’s help file (e.g., ?gng_m1) to check required data columns and their labels.
+
+
+Here lets look at the go nogo example data.   
+
+```{r}
+
+library(hBayesDM)
+library(data.table)
+
+dataPath = system.file("extdata/gng_exampleData.txt", package="hBayesDM")
+
+dat <- fread(dataPath)
+
+head(dat)
+
+
+```
+
+
+Appears to be long not wide format. Row per trial. Will need to adjust the FC data for this. 
+
+
+
