@@ -169,11 +169,7 @@ From the [rstan github](https://github.com/stan-dev/rstan/wiki/RStan-Getting-Sta
 This is to check that all is compiling and working and to give and idea of data format etc.
 
 
-```{r}
 
-
-
-```
 #### Adjust dataframe
 
 load in the week 1 app and lab data for FLARe pilot, TRT and headphones studies. Make it long form.
@@ -200,11 +196,13 @@ nacqm <- dim(minus)[1]
 nacqp <- dim(plus)[1]
 
 
+## check that these match and create nsub variable for RStan
+
 if (nacqm == nacqp) {
   print('subject number match')
-  nacq <- nacqm
+  nsub <- nacqm
   
-  print(paste('nacq set to',nacq,sep=" "))
+  print(paste('nsub set to',nsub,sep=" "))
 } else {
   print('WARNING: subject number does not match. Check master dataset')
 }
@@ -214,169 +212,134 @@ if (nacqm == nacqp) {
 minus[1:2,]
 plus[1:2,]
 
+# create the n trials variable for RStan
+
+ntrials <- 12
+
+```
+
+The expectancy rating datasets look like they are formatted fine and ntrials and nsub variables should exist. 
+
+##### Creater scream data
+
+Need to go back to stage zero and keep scream yes/no as a variable. For now to see if this runs create simulated version for the CS+. CS- will remain the same.
+
+```{r}
+
+screamMinus <- matrix(0L,nrow=nsub, ncol=ntrials)
+
+# Initialise plus dataset in the same way, but make the first trial 1 for everyone, then add 8 additional random 1's per person. Do this in four random patterns to mimic the real data
+
+sc1 <- c(1,1,0,1,0,0,1,1,1,1,1)
+sc2 <- c(0,1,1,1,0,0,1,1,1,1,1)
+sc3 <- c(1,1,1,0,1,0,1,0,1,1,1)
+sc4 <- c(1,0,1,1,0,0,1,1,1,1,1)
+
+
+patts <- list(sc1,sc2,sc3,sc4)
+
+
+screamPlus <- matrix(0L,nrow=nsub, ncol=ntrials)
+
+screamPlus[,1] <- 1
+
+
+# for (n in 1:dim(screamPlus)[1]) {
+#   print(n)
+#   screamPlus[n,2:12] <- sample(patts,1,replace=T)
+# }
+
+
+for (n in 1:dim(screamPlus)[1]) {
+  
+  a <- sample(c(1,4),1)
+  
+  if (a == 1) {
+    screamPlus[n,2:12] <- sc1
+  } else if (a == 2) {
+    screamPlus[n,2:12] <- sc2
+  } else if (a == 3){
+    screamPlus[n,2:12] <- sc3
+  } else {
+    screamPlus[n,2:12] <- sc4
+  }
+}
+
 ```
 
 
-The expectancy rating datasets look like they are formatted fine.
 
-Now will ensure trials and subject number and data references are correct in the rstan punishment only model file. 
+#### Set up procedure to create and sync models.
 
-This directs to my local machine here 
+This directs to my local machine here ***/Users/kirstin/Dropbox/SGDP/FLARe/FLARe_MASTER/Projects/Hierachal_modelling/Scripts*** and is remotely linked to the github [repository here](https://github.com/klpurves/FLARe_Bayesian_hierarchical).  
 
-/Users/kirstin/Dropbox/SGDP/FLARe/FLARe_MASTER/Projects/Hierachal_modelling/Scripts and is linked to the github [repository here]()
-
-** Note to self** add in bash to push to github when I change this script.
+##### Make sure the most up to date stan file is in the remote repo
 
 
 ```{bash}
 
-
-echo "// The 'data' block list all input variables that are given to Stan from R. You need to specify the size of the arrays
-data {
-  int ntrials;  // number of trials per participant; "int" means that the values are integers
-  int nsub;     // number of subjects
-  int punishA[ntrials,nsub];     // shape A associated with punishment; if lost when chose shape A
-  int rating[ntrials,nsub];     // expectancy rating 0-9
-  int includeTrial[ntrials];     // whether the data from this trial should be fitted (0 for trials to exclude)
-}
-
-
-// The 'parameters' block defines the parameter that we want to fit
-parameters {
-  // Stan syntax explanation:
-  // real : parameters are real numbers
-  // <lower=0,upper=1> : parameter is in the range of 0 to 1
-  // alpha : name of the parameter
-  // [nsub,2] : size of the parameter (number of rows, number of columns)
-  // Group level parameters
-  real<lower=0,upper=1> alpha_mu; // group level learning rate mean - pos neg
-  real<lower=0> alpha_sd; // group level learning rate sd
-  real<lower=0> beta_mu; // group level mean for temperature
-  real<lower=0> beta_sd; // group level sd for temperature
-  // Single subject parameters
-  real<lower=0,upper=1> alpha[nsub]; // learning rate - separate learning rates for positive and negative
-  real<lower=0> beta[nsub] ;   // temperature (i.e. how consistent choices are); one per participant
-}
-
-// This block runs the actual model
-model {
-  // temporary variables that we will compute for each person and each trial
-  real QA[ntrials,nsub];  //Q value of shape A
-  real QB[ntrials,nsub]; // Q value of shape B
-  real deltaA[ntrials-1,nsub]; // prediction error for shape A
-  real deltaB[ntrials-1,nsub];    // prediction error for shape B
-
-
-  // Priors
-  // as no prior for alpha is defined, it implicitly becomes the range it is given in the parameters block, i.e. from 0 to 1
-  //  betawin1 ~ normal(0,1); //made this 10 as generally larger in this task
-
-  // Priors for the individual subjects are the group:
-  for (p in 1:nsub){
-    alpha[p] ~ normal(alpha_mu,alpha_sd);
-    beta[p]  ~ normal(beta_mu,beta_sd);
-  }
-
-
-  // The learning model: the aim is to define how the input data (i.e. the reward outcomes, the reward magnitudes) and parameters relate to the behavior
-  // The basic structure of the model is exactly as in Matlab before:
-  // The first lines define the learning of reward probabilities, then these are combined with magnitudes to give utilities
-  // Then the choice utilities are linked to the actual choice using a softmax function
-  for (p in 1:nsub){ // run the model for each subject
-    // Learning
-    QA[1,p] = 0; // first trial, best guess is that values are at 0
-    QB[1,p] = 0;
-    for (t in 1:ntrials-1){
-      deltaA[t,p] = (punishA[t,p]) - QA[t,p]; // prediction error for A
-      deltaB[t,p] = (1-punishA[t,p])- QB[t,p]; // prediction error for B
-      QA[t+1,p] = QA[t,p] + alpha[p] * deltaA[t,p]; // Q learning for A
-      QB[t+1,p] = QB[t,p] + alpha[p] * deltaB[t,p]; // should delta be same in both cases?
-    }
-
-
-    // Decision - combine predictions of punish probability with magnitudes
-    for (t in 1:ntrials){
-      if (includeTrial[t]==1){ // if  we want to fit the trial (we don't have missing responses)
-
-        // Compare the choice probability (based on the utility) to the actual choice
-        // See the handout for the syntax of the bernoulli_logit function
-        // equivalently we could have written (as we have done previously in Matlab; but this runs a bit less well in Stan).:
-        // ChoiceProbability1[it,is] = 1/(1+exp(beta[is]*(util2[it,is]-util1[it,is]))); // the softmax is an 'inv_logit'
-        // opt1Chosen[it,is] ~ bernoulli(ChoiceProbability1[it,is]);
-        // choices[t,p] ~ (exp(QA[t,p]/beta[p])/((exp(QA[t,p]/beta[p])+(QB[t,p]/beta[p]); // could do using bernoulli_logit
-        // need to decide what distribution works best here with expectancy ratings
-         rating[t,p] ~ bernoulli(exp(QA[t,p]/beta[p])/(exp(QA[t,p]/beta[p])+exp(QB[t,p]/beta[p])));
-      }
-    }
-  }
-}" >> /Users/kirstin/Dropbox/SGDP/FLARe/FLARe_MASTER/Projects/Hierachal_modelling/Scripts/punish_only.stan
-   
+git pull Bayes_modelling
    
 ```
 
+##### check existing paramters
+
+Unhash this if you want to check what the model looks like within the notebook.
+
+```{bash}
+stanname="punish_only.stan"
+scriptdir="/Users/kirstin/Dropbox/SGDP/FLARe/FLARe_MASTER/Projects/Hierachal_modelling/Scripts"
+
+#cat $scriptdir/$stanname
+
+```
+
+
+##### Make any changes
+
+use echo to push these to the new file if you want to make changes from here. 
+
+```{bash} 
+
+## initialise bash directory and filename
+
+stanname="punish_only.stan"
+scriptdir="/Users/kirstin/Dropbox/SGDP/FLARe/FLARe_MASTER/Projects/Hierachal_modelling/Scripts"
+
+
+#echo "<any changes here>" > $scriptdir/$stanname
+
+```
+
+##### Any push the updates to github
+
+Unhash the series below if you made any changes.
+
+
+
+```{bash}
+
+## initialise bash directory and filename
+stanname="punish_only.stan"
+scriptdir="/Users/kirstin/Dropbox/SGDP/FLARe/FLARe_MASTER/Projects/Hierachal_modelling/Scripts"
+
+
+## stage
+#git add $scriptdir/$stanname
+
+
+## push 
+
+#git push Bayes_modelling 
+
+
+```
+
+#### Now try run stan
 
 
 
 ```{r}
-
-# colnames(simulated_data)<- c('study','pat/con','id','trial','reward','pun','choices')
-# 
-# rm(rewardA,punA,choices)
-# 
-# simulated_data_Chase<-subset(simulated_data,simulated_data$study==1) #Chase data
-# 
-# rewardA <- select(simulated_data_Chase,c('id','trial','reward')) %>% spread(id, reward, fill = 0)
-# rewardA$trial <- NULL
-# punishA <- select(simulated_data_Chase,c('id','trial','pun')) %>% spread(id, pun, fill = 0)
-# punishA$trial <- NULL
-# choices <- select(simulated_data_Chase,c('id','trial','choices')) %>% spread(id, choices, fill = 0)
-# choices$trial <- NULL
-# 
-# Chase_data<-list(ntrials=ntrials,nsub=nsub_Chase,includeTrial = rep(1,ntrials),  rewardA=rewardA,punishA=punishA,choices=choices)
-# 
-# Chase_fit <- stan(file = stanfile, data = Chase_data, iter=chain_iter, chains = chain_n) #add working dir?
-# save(Chase_fit, file=file.path(datadir,'Chase_fit'))
-# 
-# traceplot(Chase_fit,'lp__')
-# 
-# # draws_Chase<- extract(Chase_fit)
-# summary_Chase<- summary(Chase_fit)
-# 
-# Chase_loglike<- extract_log_lik(Chase_fit, parameter_name = "loglik", merge_chains = TRUE)
-# 
-# loo(Chase_loglike)
-# 
-# overall_summary<-summary_Chase$summary #summary of all chains merged
-# 
-# #puts output in form for correlations
-# estimated_Chase_output<- matrix(data=NA, nrow <- nsub_Chase, ncol<- 6)
-# rownames<-paste('alpha[',1:nsub_Chase,',1]',sep='')
-# estimated_Chase_output[,1] <- overall_summary[c(rownames),'mean']
-# rownames<-paste('alpha[',1:nsub_Chase,',1]',sep='')
-# estimated_Chase_output[,2] <- overall_summary[c(rownames),'sd']
-# rownames<-paste('alpha[',1:nsub_Chase,',2]',sep='')
-# estimated_Chase_output[,3] <- overall_summary[c(rownames),'mean']
-# rownames<-paste('alpha[',1:nsub_Chase,',2]',sep='')
-# estimated_Chase_output[,4] <- overall_summary[c(rownames),'sd']
-# rownames<-paste('beta[',1:nsub_Chase,']',sep='')
-# estimated_Chase_output[,5] <- overall_summary[c(rownames),'mean']
-# rownames<-paste('beta[',1:nsub_Chase,']',sep='')
-# estimated_Chase_output[,6] <- overall_summary[c(rownames),'sd']
-# 
-# #for positive learning rate
-# cor.test(c(Chase_awin_pat,Chase_awin_con),estimated_Chase_output[,1]) #correlation
-# lm(c(Chase_awin_pat,Chase_awin_con)~estimated_Chase_output[,1]) #regression equation
-# plot(c(Chase_awin_pat,Chase_awin_con),estimated_Chase_output[,1]) #plot
-# 
-# #for negative learning rate
-# cor.test(c(Chase_aloss_pat,Chase_aloss_con),estimated_Chase_output[,3])
-# lm(c(Chase_aloss_pat,Chase_aloss_con)~estimated_Chase_output[,3])
-# plot(c(Chase_aloss_pat,Chase_aloss_con),estimated_Chase_output[,3])
-# 
-# #for beta
-# cor.test(c(Chase_beta_pat,Chase_beta_con),estimated_Chase_output[,5])
-# lm(c(Chase_beta_pat,Chase_beta_con)~estimated_Chase_output[,5])
-# plot(c(Chase_beta_pat,Chase_beta_con),estimated_Chase_output[,5])
 
 ```
 
