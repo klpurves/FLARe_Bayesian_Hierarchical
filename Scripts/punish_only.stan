@@ -2,11 +2,12 @@
 data {
   int ntrials;  // number of trials per participant; 'int' means that the values are integers
   int nsub;     // number of subjects
-  int plus[ntrials,nsub];     // CS plus expectancy ratings associated with punishment (scream) 75 % contingency
-  int minus[ntrials,nsub];    // CS minus expectancy ratings associated with no punishment 100% of the time
-  int includeTrial[ntrials];     // whether the data from this trial should be fitted (0 for trials to exclude) not currently using this. 
+  int screamPlus // Whether a scream occurred for the CS+
+  int screamMinus // whether a scream occurred for the CS-
+  int ratingPlus[ntrials,nsub];     // CS plus expectancy ratings associated with punishment (scream) 75 % contingency
+  int ratingMinus[ntrials,nsub];    // CS minus expectancy ratings associated with no punishment 100% of the time
+  int includeTrial[ntrials];     // whether the data from this trial should be fitted (0 for trials to exclude) not currently using this.
 }
-
 
 // The 'parameters' block defines the parameter that we want to fit
 parameters {
@@ -16,22 +17,22 @@ parameters {
   // alpha : name of the parameter
   // [nsub,2] : size of the parameter (number of rows, number of columns)
   // Group level parameters
-  real<lower=0,upper=1> alpha_mu; // group level learning rate mean - pos neg
-  real<lower=0> alpha_sd; // group level learning rate sd
-  real<lower=0> beta_mu; // group level mean for temperature
-  real<lower=0> beta_sd; // group level sd for temperature
+  real<lower=0,upper=1> alpha_mu[2]; // group level learning rate mean - pos neg
+  real<lower=0> alpha_sd[2]; // group level learning rate sd
+  //real<lower=0> beta_mu; // group level mean for temperature
+  //real<lower=0> beta_sd; // group level sd for temperature
   // Single subject parameters
-  real<lower=0,upper=1> alpha[nsub]; // learning rate - separate learning rates for positive and negative
-  real<lower=0> beta[nsub] ;   // temperature (i.e. how consistent choices are); one per participant
+  real<lower=0,upper=1> alpha[nsub,2]; // learning rate - separate learning rates for positive and negative
+//  real<lower=0> beta[nsub] ;   // temperature (i.e. how consistent choices are); one per participant
 }
 
 // This block runs the actual model
 model {
   // temporary variables that we will compute for each person and each trial
-  real QA[ntrials,nsub];  //Q value of shape A
-  real QB[ntrials,nsub]; // Q value of shape B
-  real deltaA[ntrials-1,nsub]; // prediction error for shape A
-  real deltaB[ntrials-1,nsub];    // prediction error for shape B
+  real QPlus[ntrials,nsub];  //Q value of shape Plus
+  real QMinus[ntrials,nsub]; // Q value of shape Minus
+  real deltaPlus[ntrials-1,nsub]; // prediction error for shape Plus
+  real deltaMinus[ntrials-1,nsub];    // prediction error for shape Minus
 
 
   // Priors
@@ -40,8 +41,9 @@ model {
 
   // Priors for the individual subjects are the group:
   for (p in 1:nsub){
-    alpha[p] ~ normal(alpha_mu,alpha_sd);
-    beta[p]  ~ normal(beta_mu,beta_sd);
+    alpha[p,1] ~ normal(alpha_mu[1],alpha_sd[1]);
+    alpha[p,2] ~ normal(alpha_mu[2],alpha_sd[2]);
+  //  beta[p]  ~ normal(beta_mu,beta_sd);
   }
 
 
@@ -51,15 +53,29 @@ model {
   // Then the choice utilities are linked to the actual choice using a softmax function
   for (p in 1:nsub){ // run the model for each subject
     // Learning
-    QA[1,p] = 0; // first trial, best guess is that values are at 0
-    QB[1,p] = 0;
+    QPlus[1,p] = 0; // first trial, best guess is that values are at 0
+    QMinus[1,p] = 0;
     for (t in 1:ntrials-1){
-      deltaA[t,p] = (plus[t,p]) - QA[t,p]; // prediction error for A
-      deltaB[t,p] = (1-plus[t,p])- QB[t,p]; // prediction error for B
-      QA[t+1,p] = QA[t,p] + alpha[p] * deltaA[t,p]; // Q learning for A
-      QB[t+1,p] = QB[t,p] + alpha[p] * deltaB[t,p]; // should delta be same in both cases?
+      deltaPlus[t,p] = (screamPlus[t,p]) - QPlus[t,p]; // prediction error for Plus
+      deltaMinus[t,p] = (screamMinus[t,p])- QMinus[t,p]; // prediction error for Minus
+      QPlus[t+1,p] = QPlus[t,p] + alpha[p,1] * deltaPlus[t,p]; // Q learning for Plus
+      QMinus[t+1,p] = QMinus[t,p] + alpha[p,2] * deltaMinus[t,p]; // should delta be same in both cases?
     }
 
+    // for now, to check if I can run it, convert expectancy to binary choice
+    // i.e. > 4.5 == 1, < 4.5 == 0
+
+    if (QPlus > 4.5){
+      QPlus == 1
+    } else {
+      QPlus == 0
+    }
+
+    if (QMinus > 4.5){
+      QMinus == 1
+    } else {
+      QMinus == 0
+    }
 
     // Decision - combine predictions of punish probability with magnitudes
     for (t in 1:ntrials){
@@ -70,9 +86,14 @@ model {
         // equivalently we could have written (as we have done previously in Matlab; but this runs a bit less well in Stan).:
         // ChoiceProbability1[it,is] = 1/(1+exp(beta[is]*(util2[it,is]-util1[it,is]))); // the softmax is an 'inv_logit'
         // opt1Chosen[it,is] ~ bernoulli(ChoiceProbability1[it,is]);
-        // choices[t,p] ~ (exp(QA[t,p]/beta[p])/((exp(QA[t,p]/beta[p])+(QB[t,p]/beta[p]); // could do using bernoulli_logit
+        // choices[t,p] ~ (exp(QPlus[t,p]/beta[p])/((exp(QPlus[t,p]/beta[p])+(QMinus[t,p]/beta[p]); // could do using bernoulli_logit
         // need to decide what distribution works best here with expectancy ratings
-         rating[t,p] ~ bernoulli(exp(QA[t,p]/beta[p])/(exp(QA[t,p]/beta[p])+exp(QB[t,p]/beta[p])));
+        // plusRating[t,p] ~ bernoulli(exp(QPlus[t,p]/beta[p])/(exp(QPlus[t,p]/beta[p])+exp(QMinus[t,p]/beta[p])));
+        //  minusRating[t,p] ~ bernoulli(exp(QMinus[t,p]/beta[p])/(exp(QMinus[t,p]/beta[p])+exp(QMinus[t,p]/beta[p])));
+
+        plusRating[t,p] ~ bernoulli_logit(QPlus[t,p]);
+        minusRating[t,p] ~ bernoulli_logit(QMinus[t,p]);
+
       }
     }
   }
