@@ -62,11 +62,6 @@ model {
       QMinus[t+1,p] = QMinus[t,p] + alpha[p,2] * deltaMinus[t,p]; // should delta be same in both cases?
     }
 
-    // for now, to check if I can run it, convert expectancy to binary choice
-    // i.e. > 4.5 == 1, < 4.5 == 0
-
-    QPlus[1,p]=if_else(QPlus > 4.5,1,0)
-    QMinus[1,p]=if_else(QMinus > 4.5,1,0)
 
     // Decision - combine predictions of punish probability with magnitudes
     for (t in 1:ntrials){

@@ -220,7 +220,7 @@ ntrials <- 12
 
 The expectancy rating datasets look like they are formatted fine and ntrials and nsub variables should exist. 
 
-##### Creater scream data
+##### Create scream data
 
 Need to go back to stage zero and keep scream yes/no as a variable. For now to see if this runs create simulated version for the CS+. CS- will remain the same.
 
@@ -234,9 +234,6 @@ sc1 <- c(1,1,0,1,0,0,1,1,1,1,1)
 sc2 <- c(0,1,1,1,0,0,1,1,1,1,1)
 sc3 <- c(1,1,1,0,1,0,1,0,1,1,1)
 sc4 <- c(1,0,1,1,0,0,1,1,1,1,1)
-
-
-patts <- list(sc1,sc2,sc3,sc4)
 
 
 screamPlus <- matrix(0L,nrow=nsub, ncol=ntrials)
@@ -264,6 +261,31 @@ for (n in 1:dim(screamPlus)[1]) {
     screamPlus[n,2:12] <- sc4
   }
 }
+
+```
+
+
+##### make rating data binary
+
+
+for now to see if stan runs using bernoulli-logit function make binary resposnes from expectancy i.e. >=4.5 ==1, <= 4.5 ==0. 
+
+
+
+```{r}
+
+binarise <- function(x) {
+  ifelse(x >= 4.5,1,0)
+}
+
+```
+
+```{r}
+
+
+minus <- data.frame(apply(minus,2,function(x) binarise(x)))
+
+plus <- data.frame(apply(plus,2,function(x) binarise(x)))
 
 ```
 
@@ -356,9 +378,6 @@ summary_flare<- summary(flare_fit)
 
 
 
-```{bash}
-ssh -t -t -R 80 k1506745@login.rosalind.kcl.ac.uk
-```
 
 
 
