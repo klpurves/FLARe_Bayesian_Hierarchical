@@ -2,11 +2,11 @@
 data {
   int ntrials;  // number of trials per participant; 'int' means that the values are integers
   int nsub;     // number of subjects
-  int screamPlus[ntrials,nsub]; // Whether a scream occurred for the CS+
-  int screamMinus[ntrials,nsub]; // whether a scream occurred for the CS-
-  int ratingPlus[ntrials,nsub];     // CS plus expectancy ratings associated with punishment (scream) 75 % contingency
-  int ratingMinus[ntrials,nsub];    // CS minus expectancy ratings associated with no punishment 100% of the time
-  int includeTrial[ntrials];     // whether the data from this trial should be fitted (0 for trials to exclude) not currently using this.
+  int screamPlus[nsub,ntrials]; // Whether a scream occurred for the CS+
+  int screamMinus[nsub,ntrials]; // whether a scream occurred for the CS-
+  int ratingPlus[nsub,ntrials];     // CS plus expectancy ratings associated with punishment (scream) 75 % contingency
+  int ratingMinus[nsub,ntrials];    // CS minus expectancy ratings associated with no punishment 100% of the time
+  int includeTrial[nsub,ntrials];     // whether the data from this trial should be fitted (0 for trials to exclude) not currently using this.
 }
 
 // The 'parameters' block defines the parameter that we want to fit
