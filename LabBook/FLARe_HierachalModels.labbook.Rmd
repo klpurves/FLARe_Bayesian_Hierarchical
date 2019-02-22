@@ -283,9 +283,9 @@ binarise <- function(x) {
 ```{r}
 
 
-minus <- data.frame(apply(minus,2,function(x) binarise(x)))
+minusb <- data.frame(apply(minus,2,function(x) binarise(x)))
 
-plus <- data.frame(apply(plus,2,function(x) binarise(x)))
+plusb <- data.frame(apply(plus,2,function(x) binarise(x)))
 
 ```
 
@@ -333,29 +333,6 @@ scriptdir="/Users/kirstin/Dropbox/SGDP/FLARe/FLARe_MASTER/Projects/Hierachal_mod
 
 ```
 
-##### Any push the updates to github
-
-Unhash the series below if you made any changes.
-
-
-
-```{bash}
-
-## initialise bash directory and filename
-stanname="punish_only.stan"
-scriptdir="/Users/kirstin/Dropbox/SGDP/FLARe/FLARe_MASTER/Projects/Hierachal_modelling/Scripts"
-
-
-## stage
-#git add $scriptdir/$stanname
-
-
-## push 
-
-#git push Bayes_modelling 
-
-
-```
 
 #### Now try run stan
 
@@ -363,7 +340,7 @@ scriptdir="/Users/kirstin/Dropbox/SGDP/FLARe/FLARe_MASTER/Projects/Hierachal_mod
 
 ```{r}
 flare_data<-list(ntrials=ntrials,nsub=nsub,includeTrial = rep(1,ntrials), screamPlus=t(screamPlus),screamMinus=t(screamMinus),
-                 ratingPlus=t(plus),ratingMinus=t(minus))
+                 ratingPlus=t(plusb),ratingMinus=t(minusb))
 
 flare_fit <- stan(file = stanfile, data = flare_data, iter=chain_iter, chains = chain_n) #add working dir?
 
@@ -396,6 +373,60 @@ extract the loglikelihood using loo
 loo(flare_loglike)
 
 ```
+
+
+so, good news is this all works. So preliminary check a success. Next need to consider the appropriate model. 
+
+
+## Model attempt 1
+
+### notes
+
+discussion with Vince Valton and Alex Pike about the best way to fit this model. As the observed outcomes (expectancy ratings) are non binary and are related to eachother (i.e. as you become more likely to select 9, you become less likely to select 1) we should consider each trial for each person for each stimulus as a constantly updating beta distribution. so you might see a pattern like this for the CS= in acq:
+
+```{r}
+
+hist(rnorm(9,4.5,0.01))
+
+```
+
+### adjust data
+
+rescale the 1-9 expectancy values to be on a 0-1 scale.
+
+```{r}
+
+library(scales)
+
+minus_scaled <- apply(minus,2,function(x) rescale(x, to=c(0,1)))
+plus_scaled <- apply(plus,2,function(x) rescale(x, to=c(0,1)))
+
+```
+# Push any updates to github 
+
+##### Any push the updates to github
+
+Unhash the series below if you made any changes.
+
+
+```{bash}
+
+## initialise bash directory and filename
+stanname="punish_only.stan"
+scriptdir="/Users/kirstin/Dropbox/SGDP/FLARe/FLARe_MASTER/Projects/Hierachal_modelling/Scripts"
+
+
+## stage
+#git add $scriptdir/$stanname
+
+
+## push 
+
+#git push Bayes_modelling 
+
+
+```
+
 
 
 
