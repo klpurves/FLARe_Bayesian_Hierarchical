@@ -340,11 +340,25 @@ scriptdir="/Users/kirstin/Dropbox/SGDP/FLARe/FLARe_MASTER/Projects/Hierachal_mod
 
 
 ```{r}
+flare_data<-list(ntrials=ntrials,nsub=nsub,includeTrial = rep(1,ntrials), screamPlus=screamPlus,screamMinus=screamMinus,
+                 ratingPlus=plus,ratingMinus=minus)
+
+flare_fit <- stan(file = stanfile, data = flare_data, iter=chain_iter, chains = chain_n) #add working dir?
+
+save(flare_fit, file=file.path(datadir,'flare_fit_test'))
+
+traceplot(flare_fit,'lp__')
+
+# draws_Chase<- extract(Chase_fit)
+summary_flare<- summary(flare_fit)
 
 ```
 
 
 
+```{bash}
+ssh -t -t -R 80 k1506745@login.rosalind.kcl.ac.uk
+```
 
 
 

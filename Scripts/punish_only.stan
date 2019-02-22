@@ -65,17 +65,8 @@ model {
     // for now, to check if I can run it, convert expectancy to binary choice
     // i.e. > 4.5 == 1, < 4.5 == 0
 
-    if (QPlus > 4.5){
-      QPlus == 1
-    } else {
-      QPlus == 0
-    }
-
-    if (QMinus > 4.5){
-      QMinus == 1
-    } else {
-      QMinus == 0
-    }
+    QPlus=if_else(QPlus > 4.5,1,0)
+    QMinus=if_else(QMinus > 4.5,1,0)
 
     // Decision - combine predictions of punish probability with magnitudes
     for (t in 1:ntrials){
