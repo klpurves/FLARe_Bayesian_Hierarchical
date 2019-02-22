@@ -116,7 +116,7 @@ The settings for the script are below, including stan chain paramters and direct
 rm(list=ls())
 
 #testing is TRUE means runs with less of everything for speed
-testing=FALSE
+testing=TRUE
 
 # directories
 workingdir='/Users/kirstin/Dropbox/SGDP/FLARe/FLARe_MASTER/Projects/Hierachal_modelling/Modelling'
@@ -125,8 +125,8 @@ datadir='/Users/kirstin/Dropbox/SGDP/FLARe/FLARe_MASTER/Projects/LatentGrowth/Da
 
 # stan parameters
 
-chain_iter=2e4 # number of iterations for each chain inc. warmup (half)
-if (testing==TRUE) chain_iter=2e3
+chain_iter=5000 # number of iterations for each chain inc. warmup (half)
+if (testing==TRUE) chain_iter=500
 chain_n=4 #4 chains
 if (testing==TRUE) chain_n=1
 
@@ -362,8 +362,8 @@ scriptdir="/Users/kirstin/Dropbox/SGDP/FLARe/FLARe_MASTER/Projects/Hierachal_mod
 
 
 ```{r}
-flare_data<-list(ntrials=ntrials,nsub=nsub,includeTrial = rep(1,ntrials), screamPlus=screamPlus,screamMinus=screamMinus,
-                 ratingPlus=plus,ratingMinus=minus)
+flare_data<-list(ntrials=ntrials,nsub=nsub,includeTrial = rep(1,ntrials), screamPlus=t(screamPlus),screamMinus=t(screamMinus),
+                 ratingPlus=t(plus),ratingMinus=t(minus))
 
 flare_fit <- stan(file = stanfile, data = flare_data, iter=chain_iter, chains = chain_n) #add working dir?
 
