@@ -143,7 +143,7 @@ library('dplyr')
 library('reshape')
 library('tidyr')
 library('rstan') 
-library('loo')
+library('loo')    # this is model comparison package. helps extract loglikelihood too.
 library('data.table')
 
 #options for RSTAN
@@ -371,13 +371,31 @@ save(flare_fit, file=file.path(datadir,'flare_fit_test'))
 
 traceplot(flare_fit,'lp__')
 
-# draws_Chase<- extract(Chase_fit)
+# extract fit data
 summary_flare<- summary(flare_fit)
+
+# extract model summary data
+
+flare_loglike<- extract_log_lik(flare_fit, parameter_name = "loglik", merge_chains = TRUE)
+
+
 
 ```
 
+view the fit information
 
+```{r}
 
+summary_flare
+
+```
+extract the loglikelihood using loo
+
+```{r}
+
+loo(flare_loglike)
+
+```
 
 
 
