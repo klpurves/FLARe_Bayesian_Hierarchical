@@ -29,10 +29,10 @@ parameters {
 // This block runs the actual model
 model {
   // temporary variables that we will compute for each person and each trial
-  real QPlus[ntrials,nsub];  //Q value of shape Plus
-  real QMinus[ntrials,nsub]; // Q value of shape Minus
-  real deltaPlus[ntrials-1,nsub]; // prediction error for shape Plus
-  real deltaMinus[ntrials-1,nsub];    // prediction error for shape Minus
+  real QPlus[nsub,ntrials];  //Q value of shape Plus
+  real QMinus[nsub,ntrials]; // Q value of shape Minus
+  real deltaPlus[nsub,ntrials-1]; // prediction error for shape Plus
+  real deltaMinus[nsub,ntrials-1];    // prediction error for shape Minus
 
 
   // Priors
