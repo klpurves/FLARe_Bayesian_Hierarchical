@@ -77,8 +77,8 @@ model {
         // plusRating[t,p] ~ bernoulli(exp(QPlus[t,p]/beta[p])/(exp(QPlus[t,p]/beta[p])+exp(QMinus[t,p]/beta[p])));
         //  minusRating[t,p] ~ bernoulli(exp(QMinus[t,p]/beta[p])/(exp(QMinus[t,p]/beta[p])+exp(QMinus[t,p]/beta[p])));
 
-        plusRating[t,p] ~ bernoulli_logit(QPlus[t,p]);
-        minusRating[t,p] ~ bernoulli_logit(QMinus[t,p]);
+        ratingPlus[t,p] ~ bernoulli_logit(QPlus[t,p]);
+        ratingMinus[t,p] ~ bernoulli_logit(QMinus[t,p]);
 
       }
     }
