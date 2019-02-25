@@ -9,7 +9,7 @@ data {
 
 parameters {
   real <lower=0,upper=1>alpha[nsub]; //learning rate
-  real <lower=0> beta[nsub]; //calculate distribution variance
+  real <lower=0,upper=0.001> beta[nsub]; //calculate distribution variance
 }
 
 model {
@@ -21,8 +21,8 @@ model {
 
   real VPlus[ntrials,nsub]; // value CS+
   real VMinus[ntrials,nsub]; // value CS-
-  real deltaPlus[nsub,ntrials-1]; // prediction error for  CS+
-  real deltaMinus[nsub,ntrials-1];    // prediction error for CS-
+  real deltaPlus[ntrials-1,nsub]; // prediction error for  CS+
+  real deltaMinus[ntrials-1,nsub];    // prediction error for CS-
 
 
   for (p in 1:nsub){
