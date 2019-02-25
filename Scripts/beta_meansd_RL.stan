@@ -28,7 +28,7 @@ model {
   for (p in 1:nsub){
     VPlus[1,p]=0.5;
     VMinus[1,p]=0.5;
-    for (t in 1:(ntrials-1){
+    for (t in 1:(ntrials-1)){
       deltaPlus[t,p] = screamPlus[t,p]-VPlus[t,p]; // prediction error calc CS+
       deltaMinus[t,p] = screamMinus[t,p]-VMinus[t,p]; // ditto CS-
       VPlus[t+1,p]=VPlus[t,p]+alpha[p]*deltaPlus[t,p]; // value calc CS+
