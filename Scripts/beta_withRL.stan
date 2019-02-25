@@ -25,8 +25,8 @@ model {
     for t in 1:ntrials-1{
       deltaPlus[t,p] = screamPlus[t,p]-VPlus[t,p]; // prediction error calc CS+
       deltaMinus[t,p] = screamMinus[t,p]-VMinus[t,p]; // ditto CS-
-      VPlus[t+1,p]=V[t,p]+alpha[p]*deltaPlus[t,p]; // value calc CS+
-      VMinus[t+1,p]=V[t,p]+alpha[p]*deltaPlus[t,p]; // ditto CS-
+      VPlus[t+1,p]=VPlus[t,p]+alpha[p]*deltaPlus[t,p]; // value calc CS+
+      VMinus[t+1,p]=VMinus[t,p]+alpha[p]*deltaPlus[t,p]; // ditto CS-
     }
 
     for (t in 1:ntrials){
