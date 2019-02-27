@@ -84,3 +84,36 @@ model {
     }
   }
 }
+
+//this block generates model loglikelihood to enable comparisons
+
+generated quantities { //does the same calculations again for the fitted values
+  real loglik[nsub];
+  real QPlus[ntrials,nsub];  //Q value of shape A
+  real QMinus[ntrials,nsub]; // Q value of shape B
+  real deltaA[ntrials-1,nsub]; // prediction error for shape A
+  real deltaB[ntrials-1,nsub];    // prediction error for shape B
+
+//this code is basically a copy of the model block
+  for (p in 1:nsub){
+    loglik[p] = 0; //initialise at 0
+    QPlus[1,p] = 0;
+    QMinus[1,p] = 0;
+    for (t in 1:ntrials-1){
+      deltaPlus[t,p] = (screamPlus[t,p]) - QPlus[t,p]; // prediction error for Plus
+      deltaMinus[t,p] = (screamMinus[t,p])- QMinus[t,p]; // prediction error for Minus
+      QPlus[t+1,p] = QPlus[t,p] + alpha[p,1] * deltaPlus[t,p]; // Q learning for Plus
+      QMinus[t+1,p] = QMinus[t,p] + alpha[p,2] * deltaMinus[t,p]; // should delta be same in both cases?
+      }
+
+
+    for (t in 1:ntrials){
+      if (includeTrial[t]==1){ // if  we want to fit the trial (we don't have missing responses)
+
+      // increments the log likelihood trial by trial using the log choice prob and parameters estimated in the model block
+         loglik[p] =  loglik[p] + 1/exp(QPlus[t,p])   ;
+         +punishA[t,p]*exp(QA[t,p]/beta[p,2])/(exp(QA[t,p]/beta[p,2])+exp(QMinus[t,p]/beta[p,2]))));
+      }
+    }
+  }
+}

@@ -16,14 +16,9 @@ model {
   real alphaMinus[nsub];
 
   for (p in 1:nsub){
-<<<<<<< HEAD
-    alphaPlus[p] =  nothingPlus[p]/ntrials;
-    alphaMinus[p] =  nothingMinus[p]/ntrials;
-=======
-    alphaPlus[p] =  1-nothingPlus[p]/ntrials;
-    alphaMinus[p] =  1-nothingMinus[p]/ntrials;
->>>>>>> 2220dc905015b04cf0351f0c5d1761d350bfa628
-    ratingsPlus[p,] ~ beta(alphaPlus[p],beta[p]);
-    ratingsMinus[p,] ~ beta(alphaMinus[p],beta[p]);
+      alphaPlus[p] =  nothingPlus[p]/ntrials;
+      alphaMinus[p] =  nothingMinus[p]/ntrials;
+      ratingsPlus[p,] ~ beta(alphaPlus[p],beta[p]);
+      ratingsMinus[p,] ~ beta(alphaMinus[p],beta[p]);
+    }
   }
-}

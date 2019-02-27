@@ -9,7 +9,7 @@ data {
 
 parameters {
   real <lower=0> beta[nsub]; //calculate the beta in the beta distribution
-  real scaling[nsub];
+  real <lower=0> scaling[nsub];
 }
 
 model {
@@ -17,8 +17,8 @@ model {
   real alphaMinus[nsub];
 
   for (p in 1:nsub){
-    alphaPlus[p] =  1-scaling*nothingPlus[p]/ntrials;
-    alphaMinus[p] =  1-scaling*nothingMinus[p]/ntrials;
+    alphaPlus[p] =  scaling[p]*nothingPlus[p]/ntrials;
+    alphaMinus[p] =  scaling[p]*nothingMinus[p]/ntrials;
     ratingsPlus[p,] ~ beta(alphaPlus[p],beta[p]);
     ratingsMinus[p,] ~ beta(alphaMinus[p],beta[p]);
   }

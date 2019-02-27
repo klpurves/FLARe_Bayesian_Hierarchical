@@ -64,14 +64,12 @@ Identifying parameters that predict individual trajectories of fear learning and
 
 Toby Wise has just submitted an aversive learning paper incorporating beta probability distributions in the best model for uncertain learning paramters etc.
 
-A copy of this is [here](/Users/kirstin/Dropbox/SGDP/FLARe/PDFs/uncertainty_attention_paper_PLoSCB.pdf)
-
-
+A copy of this is ![here](/Users/kirstin/Dropbox/SGDP/FLARe/PDFs/uncertainty_attention_paper_PLoSCB.pdf)
 
 
 ## Analysis plan 
 
-1.  Define set of a priori models moving from simple to more complex   
+1.  Define set of a priori models moving from simple to more complex  
       + Some paramters to include: 
         + Rate of learning (sometimes with punishment reinforcement)
         + Sensitivity to punishment
@@ -106,9 +104,465 @@ A copy of this is [here](/Users/kirstin/Dropbox/SGDP/FLARe/PDFs/uncertainty_atte
 
 Will use a combination of `R.Version(3.5.1)`, `RStan (Version 2.18.2, GitRev: 2e1f913d3ca3)` and `hBayesDM package in R (3.5.1)` [Ahn, W.-Y., Haines, N., & Zhang, L. (2017). Revealing neuro-computational mechanisms of reinforcement learning and decision-making with the hBayesDM package. Computational Psychiatry, 1, 24-57.](https://doi.org/10.1162/CPSY_a_00), which uses RStan
 
-# Analyses {.tabset}
 
-## Preliminary 
+## Modelling notes {.tabset}
+
+### Intuition
+
+
+Discussion with Vince Valton and Alex Pike about the best way to fit this model. As the observed outcomes (expectancy ratings) are non binary and are related to eachother (i.e. as you become more likely to select 9, you become less likely to select 1) we should consider each trial for each person for each stimulus as a constantly updating beta distribution. so you might see a pattern like this for the CS+ in acq for example.
+
+So, best model is likely to be one using beta distributions that show the probability distribution for each rating. 
+
+We can use sufficient parameters to describe these (i.e. mean / sd or possibly the mode)
+
+*scaling*
+
+We can scale the beta by how aversive participants find the shock. i.e. it might update their learning as if there was .5 a shock or 1.5 of a shock depending on their own sensitivity to the aversiveness / punishment.
+
+*alpha*
+
+*generalisation*
+
+We can do this with a single beta distribution for each phase (collapsing over the two stimuli). This would be akin to a per phase generalisation paramaterer in that it will be smaller if they tend to choose the same expectancy for both stimuli and larger if they tend to choose very differently for both stimuli. 
+
+***However***, because these variables are not really equivalent (i.e the reinforcement rate is different for both, and we use this in the model)   
+
+So instead we can create a paramater which is the value of cs- weighted by some value of the cs+. How much each individual weights by the Cs+ can be freely estimated by the model and can be the generalisation paramter.
+
+So this would be vminus = vminus + (w)vplus (where the w paramter is the freely estimated paramter per person)
+
+
+*per stimulus*
+We probably want to model cs+ and cs- separately too - so have a beta distribution characterised by sufficient parameters for each.
+
+
+
+*per trial*
+
+All of the above can then also be done with updating per trial. 
+
+*leaky beta*
+
+we also need a model that incorporates 'leak'. **i.e.** learning leak - likely that participants will update more based on more recent trials and learn less from the more distant trials as time progresses. See Toby's paper ![here](/Users/kirstin/Dropbox/SGDP/FLARe/PDFs/uncertainty_attention_paper_PLoSCB.pdf) for more. 
+
+*uncertainty*
+
+We should consider incorportating a paramter that maps to participant uncertainty about outcomes. 
+
+*anxiety*
+
+Might be worth incorporating this as a model paramater / feature. Read this for more.
+
+[Hypotheses About the Relationship of Cognition With Psychopathology Should be Tested by Embedding Them Into Empirical Priors (Moutoussist et al., 2018)](https://www.frontiersin.org/articles/10.3389/fpsyg.2018.02504/full)
+
+### Terminology
+
+*V* == 'value'. Baasically a paramter that is about the salience of the stimulus at any given point.    
+*alpha* == 'learning rate'. A parameter that describes how sensitive people are to updating their learning. So a fast learning rate means that learning on any given trial is weighted more based on the trials immediatly preceding than past ones, and a slow learning rate means that all past events influence learning more evenly.  Alex's tennis analogy is good here (Federer - stable player, can predict a win based on all matches; Murray - volatile player; his last match is best predictor of next match performance). 
+
+
+### Example of beta distributions
+
+and how they change depending on whether you change the beta or alpha paramters.
+
+
+```{r,echo=F}
+x <- seq(0, 1, length = 21)
+dbeta(x, 1, 1)
+pbeta(x, 1, 1)
+
+## Visualization, including limit cases:
+pl.beta <- function(a,b, asp = if(isLim) 1, ylim = if(isLim) c(0,1.1)) {
+  if(isLim <- a == 0 || b == 0 || a == Inf || b == Inf) {
+    eps <- 1e-10
+    x <- c(0, eps, (1:7)/16, 1/2+c(-eps,0,eps), (9:15)/16, 1-eps, 1)
+  } else {
+    x <- seq(0, 1, length = 1025)
+  }
+  fx <- cbind(dbeta(x, a,b), pbeta(x, a,b), qbeta(x, a,b))
+  f <- fx; f[fx == Inf] <- 1e100
+  matplot(x, f, ylab="", type="l", ylim=ylim, asp=asp,
+          main = sprintf("[dpq]beta(x, a=%g, b=%g)", a,b))
+  abline(0,1,     col="gray", lty=3)
+  abline(h = 0:1, col="gray", lty=3)
+  legend("top", paste0(c("d","p","q"), "beta(x, a,b)"),
+         col=1:3, lty=1:3, bty = "n")
+  invisible(cbind(x, fx))
+}
+
+## change alpha
+
+print("stable beta, increasing alpha")
+pl.beta(5, 5)
+pl.beta(8, 5)
+pl.beta(10, 5)
+pl.beta(12, 5)
+pl.beta(18, 5)
+
+
+## change beta
+print("stable alpha, increasing beta")
+pl.beta(5, 5)
+pl.beta(5, 8)
+pl.beta(5, 10)
+pl.beta(5, 12)
+pl.beta(5, 15)
+
+
+```
+
+### Models to write / run
+
+Will probably do all per trial. Will do an early sensitivity check to confirm this.
+
+
+1.  Single beta, no scaling   
+2.  Single beta, no scaling per trial.   
+*** At this point, compare the two above. Ensure the per trial fits better, and if it does then do all below per trial***   
+3.  "" scaled 
+4.  Single beta Single alpha reinforcement learning model (estimate both the beta and the alpha *i.e.* learning rate)
+5.  Single beta single alpha reinforcement learning with mean + sd for the beta estimate as a paramter
+6.  Beta per stimulus   
+7.  Beta per stimulus + generalisation paramter (Vminus = vminus + wvplus)   
+8.  Leaky beta   
+9.  Leaky beta + uncertainty   
+10.  Leaky beta + uncertainty + anxiety    
+
+
+# Analyses
+
+## Preliminary {.tabset}
+
+### Compare a priori to data {.tabset}
+
+#### Simulate different learning rates {.tabset}
+
+only doing this 'accurately' for the acquisition CS+, as the simulations require probability. I am using contingency for this (0.75). If set for 0 for all other phases and stimuli then it looks as if the learning should be flat regardless of alpha. We expect in reality that this probability will vary between people and will be unlikely to be zero. So test 12 and 18 trials with a probability of 0.5 and 0.2 as well.
+
+#####  12 trials; probability = 0.75
+
+```{r,echo=F}
+#this is a very basic script
+#created by Alex Pike 14/02/19
+#it simulates the learning of the value (Q) of a rewarded stimulus
+#alpha is the learning rate
+#ntrials is the number of trials in the task
+#'outcome_probabilistic' generates outcomes probabilistically for ntrials
+#'outcome_deterministic' always has the same outcome (1)
+
+
+
+## klp ACQ CSp sims
+
+ntrials = 12
+probability = 0.75; #edit this to change the probability of reward
+
+#klp - loop through some different learning rates
+
+print("Simulated learning rates. 12 trials; probability = 0.75 (CSp acq contingency) \n")
+
+for (a in seq(0:0.9,by=0.1)) {
+  
+  alpha <- a   #learning rate (between 0 and 1)
+  
+outcome_deterministic = rep(1,ntrials)
+outcome_probabilistic = ifelse(runif(100)<probability,1,0)
+
+Q=rep(0,ntrials)
+par(mfrow=c(2,1))
+for (t in 1:(ntrials-1)){
+  Q[t+1]=Q[t]+alpha*(outcome_deterministic[t] - Q[t]);
+}
+plot(Q,type='l',col='blue',xlab='trial number')
+title('Deterministic')
+
+for (t in 1:(ntrials-1)){
+  Q[t+1]=Q[t]+alpha*(outcome_probabilistic[t] - Q[t]);
+}
+
+
+plot(Q,type='l',col='red',xlab='trial number')
+title('Probabilistic',sub=paste0("alpha = ",a,sep=" "))
+
+}
+
+
+```
+#####  12 trials; probability = 0.5
+
+
+```{r,echo=F}
+
+
+ntrials = 12
+probability = 0.5; #edit this to change the probability of reward
+
+#klp - loop through some different learning rates
+
+print("Simulated learning rates. 12 trials; Probability = 0.5\n")
+
+for (a in seq(0:0.9,by=0.1)) {
+  
+  alpha <- a   #learning rate (between 0 and 1)
+  
+outcome_deterministic = rep(1,ntrials)
+outcome_probabilistic = ifelse(runif(100)<probability,1,0)
+
+Q=rep(0,ntrials)
+par(mfrow=c(2,1))
+for (t in 1:(ntrials-1)){
+  Q[t+1]=Q[t]+alpha*(outcome_deterministic[t] - Q[t]);
+}
+plot(Q,type='l',col='blue',xlab='trial number')
+title('Deterministic')
+
+for (t in 1:(ntrials-1)){
+  Q[t+1]=Q[t]+alpha*(outcome_probabilistic[t] - Q[t]);
+}
+
+
+plot(Q,type='l',col='red',xlab='trial number')
+title('Probabilistic',sub=paste0("alpha = ",a,sep=" "))
+
+}
+
+```
+
+#####  12 trials; probability = 0.2
+
+```{r,echo=F}
+
+
+ntrials = 12
+probability = 0.2; #edit this to change the probability of reward
+
+#klp - loop through some different learning rates
+
+print("Simulated learning rates. 12 trials; Probability = 0.2\n")
+
+for (a in seq(0:0.9,by=0.1)) {
+  
+  alpha <- a   #learning rate (between 0 and 1)
+  
+outcome_deterministic = rep(1,ntrials)
+outcome_probabilistic = ifelse(runif(100)<probability,1,0)
+
+Q=rep(0,ntrials)
+par(mfrow=c(2,1))
+for (t in 1:(ntrials-1)){
+  Q[t+1]=Q[t]+alpha*(outcome_deterministic[t] - Q[t]);
+}
+plot(Q,type='l',col='blue',xlab='trial number')
+title('Deterministic')
+
+for (t in 1:(ntrials-1)){
+  Q[t+1]=Q[t]+alpha*(outcome_probabilistic[t] - Q[t]);
+}
+
+
+plot(Q,type='l',col='red',xlab='trial number')
+title('Probabilistic',sub=paste0("alpha = ",a,sep=" "))
+
+}
+
+```
+
+#####  18 trials; probability = 0.5
+
+```{r,echo=F}
+
+
+ntrials = 18
+probability = 0.5; #edit this to change the probability of reward
+
+#klp - loop through some different learning rates
+
+print("Simulated learning rates. 18 trials; Probability = 0.5\n")
+
+for (a in seq(0:0.9,by=0.1)) {
+  
+  alpha <- a   #learning rate (between 0 and 1)
+  
+outcome_deterministic = rep(1,ntrials)
+outcome_probabilistic = ifelse(runif(100)<probability,1,0)
+
+Q=rep(0,ntrials)
+par(mfrow=c(2,1))
+for (t in 1:(ntrials-1)){
+  Q[t+1]=Q[t]+alpha*(outcome_deterministic[t] - Q[t]);
+}
+plot(Q,type='l',col='blue',xlab='trial number')
+title('Deterministic')
+
+for (t in 1:(ntrials-1)){
+  Q[t+1]=Q[t]+alpha*(outcome_probabilistic[t] - Q[t]);
+}
+
+
+plot(Q,type='l',col='red',xlab='trial number')
+title('Probabilistic',sub=paste0("alpha = ",a,sep=" "))
+
+}
+
+```
+
+#####  18 trials; probability = 0.2
+
+```{r,echo=F}
+
+
+ntrials = 18
+probability = 0.2; #edit this to change the probability of reward
+
+#klp - loop through some different learning rates
+
+print("Simulated learning rates. 18 trials; Probability = 0.2\n")
+
+for (a in seq(0:0.9,by=0.1)) {
+  
+  alpha <- a   #learning rate (between 0 and 1)
+  
+outcome_deterministic = rep(1,ntrials)
+outcome_probabilistic = ifelse(runif(100)<probability,1,0)
+
+Q=rep(0,ntrials)
+par(mfrow=c(2,1))
+for (t in 1:(ntrials-1)){
+  Q[t+1]=Q[t]+alpha*(outcome_deterministic[t] - Q[t]);
+}
+plot(Q,type='l',col='blue',xlab='trial number')
+title('Deterministic')
+
+for (t in 1:(ntrials-1)){
+  Q[t+1]=Q[t]+alpha*(outcome_probabilistic[t] - Q[t]);
+}
+
+
+plot(Q,type='l',col='red',xlab='trial number')
+title('Probabilistic',sub=paste0("alpha = ",a,sep=" "))
+
+}
+
+```
+
+
+#### Plot subset of trajectories in flare
+
+```{r,echo=F}
+
+
+library(data.table)
+library(ggplot2)
+library(reshape2)
+library(dplyr)
+
+save <- "/Users/kirstin/Dropbox/SGDP/FLARe/FLARe_MASTER/Projects/LatentGrowth/Figures/"
+dat <- fread("/Users/kirstin/Dropbox/SGDP/FLARe/FLARe_MASTER/Projects/LatentGrowth/Datasets/FC_t1_mplus_data.csv",data.table = F)
+
+## randomly select 10 individuals.
+
+set.seed(2016)
+file <- sample_n(dat,10)
+
+
+ap <- subset(file,select=c("Subject_ID","FCT1_1expCSp_1", 
+             "FCT1_1expCSp_2", "FCT1_1expCSp_3", "FCT1_1expCSp_4", "FCT1_1expCSp_5", 
+             "FCT1_1expCSp_6", "FCT1_1expCSp_7", "FCT1_1expCSp_8", "FCT1_1expCSp_9", 
+             "FCT1_1expCSp_10", "FCT1_1expCSp_11", "FCT1_1expCSp_12"))
+
+am <- subset(file,select=c("Subject_ID","FCT1_1expCSm_1", 
+             "FCT1_1expCSm_2", "FCT1_1expCSm_3", "FCT1_1expCSm_4", "FCT1_1expCSm_5", 
+             "FCT1_1expCSm_6", "FCT1_1expCSm_7", "FCT1_1expCSm_8", "FCT1_1expCSm_9", 
+             "FCT1_1expCSm_10", "FCT1_1expCSm_11", "FCT1_1expCSm_12"))
+
+ep <- subset(file,select=c("Subject_ID","FCT1_3expCSp_1", "FCT1_3expCSp_2", "FCT1_3expCSp_3", 
+             "FCT1_3expCSp_4", "FCT1_3expCSp_5", "FCT1_3expCSp_6", "FCT1_3expCSp_7", 
+             "FCT1_3expCSp_8", "FCT1_3expCSp_9", "FCT1_3expCSp_10", "FCT1_3expCSp_11", 
+             "FCT1_3expCSp_12", "FCT1_3expCSp_13", "FCT1_3expCSp_14", "FCT1_3expCSp_15", 
+             "FCT1_3expCSp_16", "FCT1_3expCSp_17", "FCT1_3expCSp_18"))
+
+em <- subset(file,select=c("Subject_ID","FCT1_3expCSm_1", 
+             "FCT1_3expCSm_2", "FCT1_3expCSm_3", "FCT1_3expCSm_4", "FCT1_3expCSm_5", 
+             "FCT1_3expCSm_6", "FCT1_3expCSm_7", "FCT1_3expCSm_8", "FCT1_3expCSm_9", 
+             "FCT1_3expCSm_10", "FCT1_3expCSm_11", "FCT1_3expCSm_12", "FCT1_3expCSm_13", 
+             "FCT1_3expCSm_14", "FCT1_3expCSm_15", "FCT1_3expCSm_16", "FCT1_3expCSm_17", 
+             "FCT1_3expCSm_18"))
+
+
+
+## melt to longform
+
+apmt <- melt(ap,
+           id.var="Subject_ID")
+apmt <- apmt[(order(apmt$Subject_ID)),]
+apmt$Trial <- rep(1:12)
+
+ammt <- melt(am,
+           id.var="Subject_ID")
+ammt <- ammt[(order(ammt$Subject_ID)),]
+ammt$Trial <- rep(1:12)
+
+epmt <- melt(ep,
+           id.var="Subject_ID")
+epmt <- epmt[(order(epmt$Subject_ID)),]
+epmt$Trial <- rep(1:18)
+
+emmt <- melt(em,
+           id.var="Subject_ID")
+emmt <- emmt[(order(emmt$Subject_ID)),]
+emmt$Trial <- rep(1:18)
+
+## plot lines and box plots for the subset
+
+# acq CS+
+acp <- ggplot(apmt,
+              aes(Trial, value))            +
+  geom_boxplot(aes(group=variable))         +
+    geom_line(aes(group = Subject_ID,
+                  color=Subject_ID))        +
+  scale_color_gradientn(colors=rainbow(10)) +
+  theme(legend.position = "none")           +
+  ggtitle("CS+ acquisition")
+
+# acq CS-
+acm <- ggplot(ammt,
+              aes(Trial, value))            +
+  geom_boxplot(aes(group=variable))         +
+    geom_line(aes(group = Subject_ID,
+                  color=Subject_ID))        +
+  scale_color_gradientn(colors=rainbow(10)) +
+  theme(legend.position = "none")           +
+  ggtitle("CS- acquisition")
+
+
+# Ext CS+
+exp <- ggplot(epmt,
+              aes(Trial, value))            +
+  geom_boxplot(aes(group=variable))         +
+    geom_line(aes(group = Subject_ID,
+                  color=Subject_ID))        +
+  scale_color_gradientn(colors=rainbow(10)) +
+  theme(legend.position = "none")           +
+  ggtitle("CS+ Extinction")
+
+# Ext CS-
+exm <- ggplot(emmt,
+              aes(Trial, value))            +
+  geom_boxplot(aes(group=variable))         +
+    geom_line(aes(group = Subject_ID,
+                  color=Subject_ID))        +
+  scale_color_gradientn(colors=rainbow(10)) +
+  theme(legend.position = "none")           +
+  ggtitle("CS- Extinction")
+
+acp
+acm
+exp
+exm
+```
+
+
 
 ### Set up
 
@@ -342,9 +796,11 @@ scriptdir="/Users/kirstin/Dropbox/SGDP/FLARe/FLARe_MASTER/Projects/Hierachal_mod
 
 #### Now try run stan
 
+unhash this to run experimental script that checked if stan runs. This was mostly to check data formatting and installation / compilation etc.
 
 
 ```{r}
+
 flare_data<-list(ntrials=ntrials,nsub=nsub,includeTrial = rep(1,ntrials), screamPlus=t(screamPlus),screamMinus=t(screamMinus),
                  ratingPlus=t(plusb),ratingMinus=t(minusb))
 
@@ -380,61 +836,24 @@ extract the loglikelihood using loo
 
 ```
 
-
 so, good news is this all works. So preliminary check a success. Next need to consider the appropriate model. 
 
 
-## Model attempt 1
+## Create stan friendly datasets
 
 ### notes
 
-Discussion with Vince Valton and Alex Pike about the best way to fit this model. As the observed outcomes (expectancy ratings) are non binary and are related to eachother (i.e. as you become more likely to select 9, you become less likely to select 1) we should consider each trial for each person for each stimulus as a constantly updating beta distribution. so you might see a pattern like this for the CS+ in acq for example.
+We need to rescale our dataset here to be between 0 and 1. 
 
-```{r}
-x <- seq(0, 1, length = 21)
-dbeta(x, 1, 1)
-pbeta(x, 1, 1)
+Importantly, because we are using the proportion of trials that **are not** reinforced as a known paramter for statistical reasons (we don't want a proportion of .75 and 1, better to have .25 and 0), we have made our rescaled expectancy values as 1 - rescaled(x). This means that we will still be able to interpret the results in the expected way (i.e. higher rating is greater expectation of the outcome).
 
-## Visualization, including limit cases:
-pl.beta <- function(a,b, asp = if(isLim) 1, ylim = if(isLim) c(0,1.1)) {
-  if(isLim <- a == 0 || b == 0 || a == Inf || b == Inf) {
-    eps <- 1e-10
-    x <- c(0, eps, (1:7)/16, 1/2+c(-eps,0,eps), (9:15)/16, 1-eps, 1)
-  } else {
-    x <- seq(0, 1, length = 1025)
-  }
-  fx <- cbind(dbeta(x, a,b), pbeta(x, a,b), qbeta(x, a,b))
-  f <- fx; f[fx == Inf] <- 1e100
-  matplot(x, f, ylab="", type="l", ylim=ylim, asp=asp,
-          main = sprintf("[dpq]beta(x, a=%g, b=%g)", a,b))
-  abline(0,1,     col="gray", lty=3)
-  abline(h = 0:1, col="gray", lty=3)
-  legend("top", paste0(c("d","p","q"), "beta(x, a,b)"),
-         col=1:3, lty=1:3, bty = "n")
-  invisible(cbind(x, fx))
-}
-
-## change alpha
-pl.beta(5, 5,asp=0.5)
-pl.beta(8, 5,asp=0.5)
-pl.beta(10, 5,asp=0.5)
-pl.beta(12, 5,asp=0.5)
-pl.beta(18, 5,asp=0.5)
-
-
-## change beta
-pl.beta(5, 5,asp=0.5)
-pl.beta(5, 8,asp=0.5)
-pl.beta(5, 10,asp=0.5)
-pl.beta(5, 12,asp=0.5)
-pl.beta(5, 15,asp=0.5)
-
-
-```
 
 ### rescale data
 
 rescale the 1-9 expectancy values to be on a 0-1 scale.
+
+stan cannot deal with the extreme limit of the beta, so make the rescaled limits just above 0 and below one
+
 
 ```{r}
 
@@ -451,11 +870,71 @@ plus_scaled <- data.frame(apply(plus,2,function(x) 1-rescale(x, to=c(0.00001,0.9
 
 ### create proportion screams data
 
+This is a vector containing the absolute number of trials where no scream occurred for each stimulus. As there was a 75% reinforcement rate for the CS+ (9/12 trials), this is a vector of '3's. For the CS-, no trials were reinforced so is a vector of '12's
+
 ```{r}
 
 No_scream_p <- rep(3,nsub)
 No_scream_m <- rep(12,nsub)
 
+```
+
+#### Create scream data
+
+Create datasets for the acquisition CS- and extinction CS+ and CS- reflecting that no screams occurred at all. Then use the pattern id variable to create a dataset for the acquisition CS+ indicating when a scream occurred for each participant.
+
+```{r}
+
+## Create the no scream daatsets for all
+
+screamMinus <- matrix(0L,nrow=nsub, ncol=ntrials)
+
+# Initialise plus dataset in the same way, but make the first trial 1 for everyone, then add 8 additional random 1's per person. Do this in four random patterns to mimic the real data
+
+sc1 <- c(1,1,0,1,0,0,1,1,1,1,1)
+sc2 <- c(0,1,1,1,0,0,1,1,1,1,1)
+sc3 <- c(1,1,1,0,1,0,1,0,1,1,1)
+sc4 <- c(1,0,1,1,0,0,1,1,1,1,1)
+
+
+screamPlus <- matrix(0L,nrow=nsub, ncol=ntrials)
+
+screamPlus[,1] <- 1
+
+
+# for (n in 1:dim(screamPlus)[1]) {
+#   print(n)
+#   screamPlus[n,2:12] <- sample(patts,1,replace=T)
+# }
+
+
+for (n in 1:dim(screamPlus)[1]) {
+  
+  a <- sample(c(1,4),1)
+  
+  if (a == 1) {
+    screamPlus[n,2:12] <- sc1
+  } else if (a == 2) {
+    screamPlus[n,2:12] <- sc2
+  } else if (a == 3){
+    screamPlus[n,2:12] <- sc3
+  } else {
+    screamPlus[n,2:12] <- sc4
+  }
+}
+
+```
+
+
+## Model 1: single beta no scaling {.tabset}
+
+### notes
+
+Because we use the 1-rescaled expectancy data, no need to try and invert to reinforcement paramters here. As a result we need the stan model to simply be:   
+
+```
+alphaPlus[p] =  nothingPlus[p]/ntrials;
+alphaMinus[p] =  nothingMinus[p]/ntrials;
 ```
 
 ### run Alex Pike's stan script for non scaled beta model.
@@ -491,6 +970,160 @@ summary_flare<- summary(flare_fit)
 
 
 ```
+
+## Model 3: single beta scaled {.tabset}
+
+### notes
+
+Simple alteration of the first model. We estimate a scaling parameter per person over all trials and apply this to alpha component per participant.
+
+### run Alex Pike's stan script for scaled beta model.
+
+here we try to estimate the alpha paramter of the beta distribution per trial per person per stimulus. (i.e. you have two sufficient paramters for each beta dist, the alpha and beta. we want to estimate the alpha - ). 
+
+Eventually we will scale these by the actual 'value' of the scream for each person per trial. 
+
+Using data loaded in from preliminary tests above.
+
+so this is a beta value per person (assuming the underlying process for the plus and minus are the same)
+
+```{r}
+
+stanname='beta_scaling.stan'
+
+stanfile <- file.path(scriptdir, stanname)
+
+flare_data<-list(ntrials=ntrials,nsub=nsub,nothingPlus = No_scream_p, nothingMinus=No_scream_m,ratingsPlus=plus_scaled,ratingsMinus=minus_scaled)
+
+flare_fit <- stan(file = stanfile, data = flare_data, iter=chain_iter, chains = chain_n) #add working dir?
+
+save(flare_fit, file=file.path(datadir,'flare_fit_test'))
+
+traceplot(flare_fit,'lp__')
+
+# extract fit data
+summary_flare<- summary(flare_fit)
+
+# extract model summary data
+
+#flare_loglike<- extract_log_lik(flare_fit, parameter_name = "loglik", merge_chains = TRUE)
+
+
+```
+
+
+## Model 4: reinforcement learning model, single beta, single alpha {.tabset}
+
+### notes
+
+this model includes an alpha learning paramater per person estimating their learning rate and updating based on it. This model needs a dataset that indicates whether a scream occurred for each trial instead of the proportion of times no scream occurred.
+
+### run Alex Pike's stan script for scaled beta model.
+
+here we try to estimate the alpha paramter of the beta distribution per trial per person per stimulus. (i.e. you have two sufficient paramters for each beta dist, the alpha and beta. we want to estimate the alpha - ). 
+
+Eventually we will scale these by the actual 'value' of the scream for each person per trial. 
+
+Using data loaded in from preliminary tests above.
+
+so this is a beta value per person (assuming the underlying process for the plus and minus are the same)
+
+```{r}
+
+stanname='beta_withRL.stan'
+
+stanfile <- file.path(scriptdir, stanname)
+
+flare_data<-list(ntrials=ntrials,nsub=nsub,screamPlus = t(screamPlus), screamMinus= t(screamMinus),ratingsPlus=t(plus_scaled),ratingsMinus=t(minus_scaled))
+
+flare_fit <- stan(file = stanfile, data = flare_data, iter=chain_iter, chains = chain_n) #add working dir?
+
+save(flare_fit, file=file.path(datadir,'flare_fit_test'))
+
+traceplot(flare_fit,'lp__')
+
+# extract fit data
+summary_flare <- summary(flare_fit)
+
+# extract model summary data
+
+#flare_loglike<- extract_log_lik(flare_fit, parameter_name = "loglik", merge_chains = TRUE)
+
+
+```
+
+### Add mean SD defining beta shape
+
+
+this model includes an alpha learning paramater per person estimating their learning rate and updating based on it. This model needs a dataset that indicates whether a scream occurred for each trial instead of the proportion of times no scream occurred.
+
+
+
+```{r}
+
+stanname='beta_meansd_RL.stan'
+
+stanfile <- file.path(scriptdir, stanname)
+
+flare_data<-list(ntrials=ntrials,nsub=nsub,screamPlus = t(screamPlus), screamMinus=t(screamMinus),ratingsPlus=t(plus_scaled),ratingsMinus=t(minus_scaled))
+
+flare_fit <- stan(file = stanfile, data = flare_data, iter=chain_iter, chains = chain_n) #add working dir?
+
+save(flare_fit, file=file.path(datadir,'flare_fit_test'))
+
+traceplot(flare_fit,'lp__')
+
+# extract fit data
+summary_flare<- summary(flare_fit)
+
+# extract model summary data
+
+#flare_loglike<- extract_log_lik(flare_fit, parameter_name = "loglik", merge_chains = TRUE)
+
+
+```
+
+
+#### questions
+
+* why does the beta RL mean sd not run unless beta is bounded between 0 and 0.0001??
+
+
+### Define shape using the mode instead of mean
+
+
+```{r}
+
+stanname='beta_mode_RL.stan'
+
+stanfile <- file.path(scriptdir, stanname)
+
+flare_data<-list(ntrials=ntrials,nsub=nsub,screamPlus = t(screamPlus), screamMinus=t(screamMinus),ratingsPlus=t(plus_scaled),ratingsMinus=t(minus_scaled))
+
+flare_fit <- stan(file = stanfile, data = flare_data, iter=chain_iter, chains = chain_n) #add working dir?
+
+save(flare_fit, file=file.path(datadir,'flare_fit_test'))
+
+traceplot(flare_fit,'lp__')
+
+# extract fit data
+summary_flare<- summary(flare_fit)
+
+# extract model summary data
+
+#flare_loglike<- extract_log_lik(flare_fit, parameter_name = "loglik", merge_chains = TRUE)
+
+
+```
+
+
+
+# to do
+
+* add a beta for each stimulus
+* a version with mode instead of mean (check for equations?)
+* per trial for beta_noscaling
+
 
 # Push any updates to github 
 

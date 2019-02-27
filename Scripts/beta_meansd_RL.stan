@@ -9,7 +9,10 @@ data {
 
 parameters {
   real <lower=0,upper=1>alpha[nsub]; //learning rate
-  real <lower=0,upper=0.001> beta[nsub]; //calculate distribution variance
+  real <lower=0,upper=0.0001> beta[nsub]; //calculate distribution variance.
+                                          //Basically how confident they are when rating
+                                          // related to uncertainty possibly?
+                                          // to add 2, beta[nsub,2] and where used [p,1] or [p,2] by shape
 }
 
 model {
