@@ -232,6 +232,70 @@ Will probably do all per trial. Will do an early sensitivity check to confirm th
 
 # Analyses
 
+## Set up stan 
+
+
+These use Alex Pikes RStan script with minor modification to make it punishment only to see if it runs. Testing that the approach works with the current data set up etc.  
+
+The settings for the script are below, including stan chain paramters and directory set up.
+
+```{r, echo=F,results=F}
+
+#rm(list=ls())
+
+
+#testing is TRUE means runs with less of everything for speed
+testing=FALSE
+
+# directories
+workingdir='/Users/kirstin/Dropbox/SGDP/FLARe/FLARe_MASTER/Projects/Hierachal_modelling/Modelling'
+scriptdir='/Users/kirstin/Dropbox/SGDP/FLARe/FLARe_MASTER/Projects/Hierachal_modelling/Scripts'
+datadir='/Users/kirstin/Dropbox/SGDP/FLARe/FLARe_MASTER/Projects/LatentGrowth/Datasets/'
+
+# stan parameters
+
+## When doing this properly do 1000 warm up and 4000 iterations.
+
+chain_iter=2000 # number of iterations for each chain inc. warmup (half)
+warm_up=1000
+if (testing==TRUE) chain_iter=400
+if (testing==TRUE)  warm_up=100
+chain_n=4 #4 chains
+if (testing==TRUE) chain_n=1
+
+
+# create the n trials variable for RStan
+ntrials=12
+
+
+```
+
+This loads the libraries and source files needed to run this script, and sets up RStan
+
+```{r, echo = F,results='hide',message=F}
+
+# libraries and source files 
+library('MASS')
+library('boot')
+library('dplyr')
+library('reshape')
+library('tidyr')
+library('rstan') 
+library('loo')    # this is model comparison package. helps extract loglikelihood too.
+library('data.table')
+
+#options for RSTAN
+options(mc.cores = parallel::detectCores())
+rstan_options(auto_write = TRUE)
+Sys.setenv(LOCAL_CPPFLAGS = '-march=native')
+Sys.getenv('LOCAL_CPPFLAGS') #should say '-march=native'
+
+#functions (if and when relevant and added)
+# source('/Users/kirstin/Dropbox/SGDP/Function_library/<<function script name>>')
+source('/Users/kirstin/Dropbox/SGDP/Function_library/not_in.R') # Not in %!in% function
+
+```
+
 ## Preliminary {.tabset}
 
 ### Compare a priori to data {.tabset}
@@ -255,7 +319,7 @@ only doing this 'accurately' for the acquisition CS+, as the simulations require
 
 ## klp ACQ CSp sims
 
-ntrials = 12
+n_trials = 12
 probability = 0.75; #edit this to change the probability of reward
 
 #klp - loop through some different learning rates
@@ -266,18 +330,18 @@ for (a in seq(0:0.9,by=0.1)) {
   
   alpha <- a   #learning rate (between 0 and 1)
   
-outcome_deterministic = rep(1,ntrials)
+outcome_deterministic = rep(1,n_trials)
 outcome_probabilistic = ifelse(runif(100)<probability,1,0)
 
-Q=rep(0,ntrials)
+Q=rep(0,n_trials)
 par(mfrow=c(2,1))
-for (t in 1:(ntrials-1)){
+for (t in 1:(n_trials-1)){
   Q[t+1]=Q[t]+alpha*(outcome_deterministic[t] - Q[t]);
 }
 plot(Q,type='l',col='blue',xlab='trial number')
 title('Deterministic')
 
-for (t in 1:(ntrials-1)){
+for (t in 1:(n_trials-1)){
   Q[t+1]=Q[t]+alpha*(outcome_probabilistic[t] - Q[t]);
 }
 
@@ -295,7 +359,7 @@ title('Probabilistic',sub=paste0("alpha = ",a,sep=" "))
 ```{r,echo=F}
 
 
-ntrials = 12
+n_trials = 12
 probability = 0.5; #edit this to change the probability of reward
 
 #klp - loop through some different learning rates
@@ -306,18 +370,18 @@ for (a in seq(0:0.9,by=0.1)) {
   
   alpha <- a   #learning rate (between 0 and 1)
   
-outcome_deterministic = rep(1,ntrials)
+outcome_deterministic = rep(1,n_trials)
 outcome_probabilistic = ifelse(runif(100)<probability,1,0)
 
-Q=rep(0,ntrials)
+Q=rep(0,n_trials)
 par(mfrow=c(2,1))
-for (t in 1:(ntrials-1)){
+for (t in 1:(n_trials-1)){
   Q[t+1]=Q[t]+alpha*(outcome_deterministic[t] - Q[t]);
 }
 plot(Q,type='l',col='blue',xlab='trial number')
 title('Deterministic')
 
-for (t in 1:(ntrials-1)){
+for (t in 1:(n_trials-1)){
   Q[t+1]=Q[t]+alpha*(outcome_probabilistic[t] - Q[t]);
 }
 
@@ -334,7 +398,7 @@ title('Probabilistic',sub=paste0("alpha = ",a,sep=" "))
 ```{r,echo=F}
 
 
-ntrials = 12
+n_trials = 12
 probability = 0.2; #edit this to change the probability of reward
 
 #klp - loop through some different learning rates
@@ -345,18 +409,18 @@ for (a in seq(0:0.9,by=0.1)) {
   
   alpha <- a   #learning rate (between 0 and 1)
   
-outcome_deterministic = rep(1,ntrials)
+outcome_deterministic = rep(1,n_trials)
 outcome_probabilistic = ifelse(runif(100)<probability,1,0)
 
-Q=rep(0,ntrials)
+Q=rep(0,n_trials)
 par(mfrow=c(2,1))
-for (t in 1:(ntrials-1)){
+for (t in 1:(n_trials-1)){
   Q[t+1]=Q[t]+alpha*(outcome_deterministic[t] - Q[t]);
 }
 plot(Q,type='l',col='blue',xlab='trial number')
 title('Deterministic')
 
-for (t in 1:(ntrials-1)){
+for (t in 1:(n_trials-1)){
   Q[t+1]=Q[t]+alpha*(outcome_probabilistic[t] - Q[t]);
 }
 
@@ -373,7 +437,7 @@ title('Probabilistic',sub=paste0("alpha = ",a,sep=" "))
 ```{r,echo=F}
 
 
-ntrials = 18
+n_trials = 18
 probability = 0.5; #edit this to change the probability of reward
 
 #klp - loop through some different learning rates
@@ -384,18 +448,18 @@ for (a in seq(0:0.9,by=0.1)) {
   
   alpha <- a   #learning rate (between 0 and 1)
   
-outcome_deterministic = rep(1,ntrials)
+outcome_deterministic = rep(1,n_trials)
 outcome_probabilistic = ifelse(runif(100)<probability,1,0)
 
-Q=rep(0,ntrials)
+Q=rep(0,n_trials)
 par(mfrow=c(2,1))
-for (t in 1:(ntrials-1)){
+for (t in 1:(n_trials-1)){
   Q[t+1]=Q[t]+alpha*(outcome_deterministic[t] - Q[t]);
 }
 plot(Q,type='l',col='blue',xlab='trial number')
 title('Deterministic')
 
-for (t in 1:(ntrials-1)){
+for (t in 1:(n_trials-1)){
   Q[t+1]=Q[t]+alpha*(outcome_probabilistic[t] - Q[t]);
 }
 
@@ -412,7 +476,7 @@ title('Probabilistic',sub=paste0("alpha = ",a,sep=" "))
 ```{r,echo=F}
 
 
-ntrials = 18
+n_trials = 18
 probability = 0.2; #edit this to change the probability of reward
 
 #klp - loop through some different learning rates
@@ -423,18 +487,18 @@ for (a in seq(0:0.9,by=0.1)) {
   
   alpha <- a   #learning rate (between 0 and 1)
   
-outcome_deterministic = rep(1,ntrials)
+outcome_deterministic = rep(1,n_trials)
 outcome_probabilistic = ifelse(runif(100)<probability,1,0)
 
-Q=rep(0,ntrials)
+Q=rep(0,n_trials)
 par(mfrow=c(2,1))
-for (t in 1:(ntrials-1)){
+for (t in 1:(n_trials-1)){
   Q[t+1]=Q[t]+alpha*(outcome_deterministic[t] - Q[t]);
 }
 plot(Q,type='l',col='blue',xlab='trial number')
 title('Deterministic')
 
-for (t in 1:(ntrials-1)){
+for (t in 1:(n_trials-1)){
   Q[t+1]=Q[t]+alpha*(outcome_probabilistic[t] - Q[t]);
 }
 
@@ -563,61 +627,6 @@ exm
 ```
 
 
-
-### Set up
-
-These use Alex Pikes RStan script with minor modification to make it punishment only to see if it runs. Testing that the approach works with the current data set up etc.  
-
-The settings for the script are below, including stan chain paramters and directory set up.
-
-```{r, echo=F,results=F}
-
-#clears environment
-rm(list=ls())
-
-#testing is TRUE means runs with less of everything for speed
-testing=TRUE
-
-# directories
-workingdir='/Users/kirstin/Dropbox/SGDP/FLARe/FLARe_MASTER/Projects/Hierachal_modelling/Modelling'
-scriptdir='/Users/kirstin/Dropbox/SGDP/FLARe/FLARe_MASTER/Projects/Hierachal_modelling/Scripts'
-datadir='/Users/kirstin/Dropbox/SGDP/FLARe/FLARe_MASTER/Projects/LatentGrowth/Datasets/'
-
-# stan parameters
-
-chain_iter=5000 # number of iterations for each chain inc. warmup (half)
-if (testing==TRUE) chain_iter=500
-chain_n=4 #4 chains
-if (testing==TRUE) chain_n=1
-
-```
-
-This loads the libraries and source files needed to run this script, and sets up RStan
-
-```{r, echo = F,results='hide',message=F}
-
-# libraries and source files 
-library('MASS')
-library('boot')
-library('dplyr')
-library('reshape')
-library('tidyr')
-library('rstan') 
-library('loo')    # this is model comparison package. helps extract loglikelihood too.
-library('data.table')
-
-#options for RSTAN
-options(mc.cores = parallel::detectCores())
-rstan_options(auto_write = TRUE)
-Sys.setenv(LOCAL_CPPFLAGS = '-march=native')
-Sys.getenv('LOCAL_CPPFLAGS') #should say '-march=native'
-
-#functions (if and when relevant and added)
-# source('/Users/kirstin/Dropbox/SGDP/Function_library/<<function script name>>')
-source('/Users/kirstin/Dropbox/SGDP/Function_library/not_in.R') # Not in %!in% function
-
-```
-
 ### Try RStan
 
 See if the basic punishment only learning model for the CS+ and CS- works with the FLARe master data
@@ -672,9 +681,7 @@ if (nacqm == nacqp) {
 minus[1:2,]
 plus[1:2,]
 
-# create the n trials variable for RStan
 
-ntrials <- 12
 
 ```
 
@@ -1054,8 +1061,20 @@ summary_flare <- summary(flare_fit)
 
 ### Add mean SD defining beta shape
 
-
 this model includes an alpha learning paramater per person estimating their learning rate and updating based on it. This model needs a dataset that indicates whether a scream occurred for each trial instead of the proportion of times no scream occurred.
+
+Alex used this [stack post](https://stats.stackexchange.com/questions/12232/calculating-the-parameters-of-a-beta-distribution-using-the-mean-and-variance) to help solve the shape paramters using mean and sd where we assume that v serves as the mean and beta as the sd.
+
+the equations work out to this:
+
+for shape 1: 
+
+
+$$\alpha = \left(\frac{1-\mu}{\sigma^2} - \frac{1}{\mu}\right)\mu^2$$
+
+for shape 2: 
+
+$$\beta=\alpha \left(\frac{1}{\mu}-1\right)$$
 
 
 
@@ -1091,6 +1110,20 @@ summary_flare<- summary(flare_fit)
 
 ### Define shape using the mode instead of mean
 
+Used [this post](http://doingbayesiandataanalysis.blogspot.com/2012/06/beta-distribution-parameterized-by-mode.html) to guide this. particularly:
+
+>>For a beta distribution with shape parameters a and b, the mode is (a-1)/(a+b-2). Suppose we have a desired mode, and we want to determine the corresponding shape parameters. Here's the solution. First, we express the "certainty" of the estimate in terms of the equivalent prior sample size,
+k=a+b, with k≥2. 
+The certainty must be at least 2 because it essentially assumes that the prior contains at least one "head" and one "tail," which is to say that we know each outcome is at least possible. Then a little algebra reveals:
+a = mode * (k-2) + 1
+b = (1-mode) * (k-2) + 1
+
+
+We will assume that V is the mode (above we assumed it serves as the mean) and beta is the sd again.
+
+We need to derive k, and for this we need to solve for a & b first. So given we know the mode, we need to invert (a-1)/(a+b-2).
+
+
 
 ```{r}
 
@@ -1116,12 +1149,67 @@ summary_flare<- summary(flare_fit)
 
 ```
 
+### mean sd RL model with beta per stimulus
+
+RL model adding a beta per stimuli to Alex's model
+
+```{r}
+
+stanname='beta_meansd_2beta_RL.stan'
+
+stanfile <- file.path(scriptdir, stanname)
+
+flare_data<-list(ntrials=ntrials,nsub=nsub,screamPlus = t(screamPlus), screamMinus= t(screamMinus),ratingsPlus=t(plus_scaled),ratingsMinus=t(minus_scaled))
+
+flare_fit <- stan(file = stanfile, data = flare_data, iter=chain_iter,warmup = warm_up, chains = chain_n) #add working dir?
+
+save(flare_fit, file=file.path(datadir,'flare_fit_test'))
+
+traceplot(flare_fit,'lp__')
+
+# extract fit data
+summary_flare <- summary(flare_fit)
+
+# extract model summary data
+
+#flare_loglike<- extract_log_lik(flare_fit, parameter_name = "loglik", merge_chains = TRUE)
+
+
+```
+
+### mode sd RL model with beta per stimulus
+
+RL model adding a beta per stimuli to model defining the beta shape using the mode instead of the mean.
+
+```{r}
+
+stanname='beta_mode_2beta_RL.stan'
+
+stanfile <- file.path(scriptdir, stanname)
+
+flare_data<-list(ntrials=ntrials,nsub=nsub,screamPlus = t(screamPlus), screamMinus= t(screamMinus),ratingsPlus=t(plus_scaled),ratingsMinus=t(minus_scaled))
+
+flare_fit <- stan(file = stanfile, data = flare_data, iter=chain_iter, chains = chain_n) #add working dir?
+
+save(flare_fit, file=file.path(datadir,'flare_fit_test'))
+
+traceplot(flare_fit,'lp__')
+
+# extract fit data
+summary_flare <- summary(flare_fit)
+
+# extract model summary data
+
+#flare_loglike<- extract_log_lik(flare_fit, parameter_name = "loglik", merge_chains = TRUE)
+
+
+```
 
 
 # to do
 
-* add a beta for each stimulus
-* a version with mode instead of mean (check for equations?)
+
+
 * per trial for beta_noscaling
 
 
