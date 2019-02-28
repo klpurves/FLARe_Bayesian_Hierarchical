@@ -306,6 +306,23 @@ testing <- function(x) {
 
 }
 
+out_describe <- function(summary){
+  
+  
+print(paste0(chain_iter, " iterations ", ' on ', chain_n,' chains.',sep=" "))
+print(" ")
+print('Alpha descriptives')
+describe(summary$summary[1:342])
+print(" ")
+
+print('Combined beta descriptives')
+describe(summary$summary[342:dim(summary$summary)[1]-1])
+print(" ")
+print('Average Rhat')
+mean(summary$summary[,10])
+
+}
+
 # create the n trials variable for RStan
 ntrials=12
 
@@ -1021,9 +1038,14 @@ summary_flare<- summary(flare_fit)
 #flare_loglike<- extract_log_lik(flare_fit, parameter_name = "loglik", merge_chains = TRUE)
 
 
+## get some basic output descriptions printed to screen
+
+out_describe(summary_flare)
+
+
 ```
 
-## Model 3: single beta scaled {.tabset}
+## Model 2: single beta scaled {.tabset}
 
 ### notes
 
@@ -1064,6 +1086,13 @@ summary_flare<- summary(flare_fit)
 #flare_loglike<- extract_log_lik(flare_fit, parameter_name = "loglik", merge_chains = TRUE)
 
 
+## get some basic output descriptions printed to screen
+
+out_describe(summary_flare)
+
+
+
+
 ```
 
 ### run Alex Pike's stan script for scaled beta model.
@@ -1101,10 +1130,15 @@ summary_flare <- summary(flare_fit)
 #flare_loglike<- extract_log_lik(flare_fit, parameter_name = "loglik", merge_chains = TRUE)
 
 
+## get some basic output descriptions printed to screen
+
+out_describe(summary_flare)
+
+
 ```
 
 
-## Model 4: RL, mean defined, single beta {.tabset}
+## Model 3: RL, mean defined, single beta {.tabset}
 
 ### notes
 
@@ -1148,12 +1182,16 @@ save(flare_fit, file=file.path(datadir,'flare_fit_test'))
 traceplot(flare_fit,'lp__')
 
 # extract fit data
-summary_flare_me<- summary(flare_fit)
+summary_flare<- summary(flare_fit)
 
 # extract model summary data
 
 #flare_loglike<- extract_log_lik(flare_fit, parameter_name = "loglik", merge_chains = TRUE)
 
+
+## get some basic output descriptions printed to screen
+
+out_describe(summary_flare)
 
 ```
 
@@ -1168,9 +1206,9 @@ http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmupThere we
 http://mc-stan.org/misc/warnings.html#maximum-treedepth-exceededThere were 4 chains where the estimated Bayesian Fraction of Missing Information was low. See
 http://mc-stan.org/misc/warnings.html#bfmi-lowExamine the pairs() plot to diagnose sampling problems
 
-### Mean defined differently
+### Mean definition 2
 
-the above mean definition does not map the data well (terrible traceplot!). I found [this from the MRC BSU](https://www.mrc-bsu.cam.ac.uk/wp-content/uploads/bugsbook_chapter5.pdf) and have tried defining the beta parameters assuming V == mean in a slighty different way:
+The above mean definition does not map the data well (terrible traceplot!). I found [this from the MRC BSU](https://www.mrc-bsu.cam.ac.uk/wp-content/uploads/bugsbook_chapter5.pdf) and have tried defining the beta parameters assuming V == mean in a slighty different way:
 
 for paramater a:
 
@@ -1208,13 +1246,76 @@ summary_flare_me<- summary(flare_fit)
 #flare_loglike<- extract_log_lik(flare_fit, parameter_name = "loglik", merge_chains = TRUE)
 
 
+## get some basic output descriptions printed to screen
+
+out_describe(summary_flare)
+
+
 ```
 
+### Mean definition 3
+
+noted that the shape parameters have  slight variations in definition according to discussion [here](https://stats.stackexchange.com/questions/12232/calculating-the-parameters-of-a-beta-distribution-using-the-mean-and-variance). Updated the script slightly to reflect this based on the reply from ocram.
+
+the first sd term in shape a is changed to variance, so it changes from:   
+
+$$\alpha = \left(\frac{1-\mu}{\sigma^2} - \frac{1}{\mu}\right)\mu^2$$
+
+to 
+
+$$\alpha = \left(\frac{1-\mu}{\sigma} - \frac{1}{\mu}\right)\mu^2$$
+
+
+Changes the shape 2 paramter definition from:
+
+$$\beta=\alpha \left(\frac{1}{\mu}-1\right)$$   
+
+to 
+
+
+$$\alpha = \left(\frac{1-\mu}{\sigma} - \frac{1}{\mu}\right)\mu\left(1-\mu\right)$$
+
+
+
+
+```{r}
+## decide testing rate (min,med,max or off)
+testing('min')
+
+## set up run
+stanname='beta_meansd_RL_3.stan'
+
+stanfile <- file.path(scriptdir, stanname)
+
+flare_data<-list(ntrials=ntrials,nsub=nsub,screamPlus = t(screamPlus), screamMinus=t(screamMinus),ratingsPlus=t(plus_scaled),ratingsMinus=t(minus_scaled))
+
+flare_fit <- stan(file = stanfile, data = flare_data, iter=chain_iter, chains = chain_n) #add working dir?
+
+save(flare_fit, file=file.path(datadir,'flare_fit_test'))
+
+traceplot(flare_fit,'lp__')
+
+# extract fit data
+summary_flare_me<- summary(flare_fit)
+
+# extract model summary data
+
+#flare_loglike<- extract_log_lik(flare_fit, parameter_name = "loglik", merge_chains = TRUE)
+
+
+## get some basic output descriptions printed to screen
+
+out_describe(summary_flare)
+
+
+
+
+```
 #### questions
 
 * why does the beta RL mean sd not run unless beta is bounded between 0 and 0.0001??
 
-## Model 5: RL, mode defined, single beta {.tabset}
+## Model 4: RL, mode defined, single beta {.tabset}
 
 ### notes 
 
@@ -1259,6 +1360,14 @@ summary_flare<- summary(flare_fit)
 #flare_loglike<- extract_log_lik(flare_fit, parameter_name = "loglik", merge_chains = TRUE)
 
 
+
+## get some basic output descriptions printed to screen
+
+out_describe(summary_flare)
+
+
+
+
 ```
 
 ### v as mode
@@ -1294,13 +1403,20 @@ summary_flare<- summary(flare_fit)
 #flare_loglike<- extract_log_lik(flare_fit, parameter_name = "loglik", merge_chains = TRUE)
 
 
+## get some basic output descriptions printed to screen
+
+out_describe(summary_flare)
+
+
+
+
 ```
 
 This works, but there is not a lot of variance in the alpha paramter when described by mode mean 0.49; sd = 0.06. Compared to defined by mean where mean is 0.54 and sd is 0.26.
 
 However there is a lot of variation in the beta paramter (mean -7.21, sd = 134.74)
 
-## Model 6: reinforcement learning model, mean defined,two beta {.tabset}
+## Model 5: reinforcement learning model, mean defined,two beta {.tabset}
 
 ### mean sd RL model with beta per stimulus
 
@@ -1331,18 +1447,22 @@ summary_flare <- summary(flare_fit)
 #flare_loglike<- extract_log_lik(flare_fit, parameter_name = "loglik", merge_chains = TRUE)
 
 
+## get some basic output descriptions printed to screen
+
+out_describe(summary_flare)
+
 ```
 
 
-## Model 7: RL mode defined,two beta {.tabset}
+## Model 6: RL mode defined,two beta {.tabset}
 
 ### mode sd RL model with beta per stimulus
 
-RL model adding a beta per stimuli to model defining the beta shape using the mode instead of the mean. This definitely makes more sense as we assume that they will have different levels of uncertainty about each
+RL model adding a beta per stimuli to model defining the beta shape using the mode instead of the mean. This definitely makes more sense as we assume that they will have different levels of uncertainty about each. 
 
 ```{r}
 ## decide testing rate (min,med,max or off)
-testing('med')
+testing('off')
 
 ## set up run
 stanname='beta_mode_2beta_RL_2.stan'
@@ -1365,11 +1485,17 @@ summary_flare <- summary(flare_fit)
 #flare_loglike<- extract_log_lik(flare_fit, parameter_name = "loglik", merge_chains = TRUE)
 
 
+
+## get some basic output descriptions printed to screen
+
+out_describe(summary_flare)
+
+
+
 ```
 
 
-The alpha parameter variance is still limited (mean 0.09, sd 0.04). Beta is much more bounded now though (combined across both stimuli mean 0.75, sd=1.58) over 2000 iterations.
-
+The alpha parameter variance is normal (mean 0.4 and sd 0.12). Beta is much more bounded now though (combined across both stimuli mean 0.79, sd=1.6) over 4000 iterations on 4 chains.
 
 
 # to do
