@@ -39,8 +39,8 @@ model {
     }
 
     for (t in 1:ntrials){
-      shape1_Plus[t,p] = (VPlus[t,p] -1 /(VPlus[t,p] + beta[p,1] - 2));  // assuming that Vplus and beta are our shape paramters
-      shape1_Minus[t,p] = (VMinus[t,p] -1 /(VMinus[t,p] + beta[p,2] - 2));
+      shape1_Plus[t,p] = (VPlus[t,p] -1) /(VPlus[t,p] + beta[p,1] - 2);  // assuming that Vplus and beta are our shape paramters
+      shape1_Minus[t,p] = (VMinus[t,p] -1) /(VMinus[t,p] + beta[p,2] - 2);
       shape2_Plus[t,p] = shape1_Plus[t,p]*(1/VPlus[t,p]-1);         // sd - keep for mode definition
       shape2_Minus[t,p] = shape1_Minus[t,p]*(1/VMinus[t,p]-1);      // sd - keep for mode definition
 

@@ -160,9 +160,11 @@ Might be worth incorporating this as a model paramater / feature. Read this for 
 
 *V* == 'value'. Baasically a paramter that is about the salience of the stimulus at any given point.    
 *alpha* == 'learning rate'. A parameter that describes how sensitive people are to updating their learning. So a fast learning rate means that learning on any given trial is weighted more based on the trials immediatly preceding than past ones, and a slow learning rate means that all past events influence learning more evenly.  Alex's tennis analogy is good here (Federer - stable player, can predict a win based on all matches; Murray - volatile player; his last match is best predictor of next match performance). 
+*beta* == 'confidence'. This is sort of an error term - how much variance in rating choice is there for each person/trial. Can be thought of as the variance, or beta^2 as the sd.   
 
+Can be confusing as we are using beta distributions (different thing) which has two sufficient parameters a + b).
 
-### Example of beta distributions
+### Beta distribution visualisation
 
 and how they change depending on whether you change the beta or alpha paramters.
 
@@ -229,6 +231,23 @@ Will probably do all per trial. Will do an early sensitivity check to confirm th
 9.  Leaky beta + uncertainty   
 10.  Leaky beta + uncertainty + anxiety    
 
+### Justification of model components
+
+*Alpha*
+Learning rate paramter. If high then will be very influenced by previous trial events, if low, then will be more standardly influenced by accumulating events.
+
+* Single alpha per person 
+    * Assumes that learning rate is a constant for each individual that might be scaled by other factors, such as certainty or sensitivity.
+
+*Betas*
+Variance/certainty parameter
+
+* Single beta per person   
+    *   Assumes that the general variance around ratings is the same regardless of stimulus. i.e. as much uncertainty for CS+ asn CS-
+* Two beta's per person
+    * Assumes that confidence / uncertainty might differ by stimulus. Presumably as a factor of reinforcement rate.
+
+
 
 # Analyses
 
@@ -239,30 +258,53 @@ These use Alex Pikes RStan script with minor modification to make it punishment 
 
 The settings for the script are below, including stan chain paramters and directory set up.
 
+
 ```{r, echo=F,results=F}
 
 #rm(list=ls())
-
-
-#testing is TRUE means runs with less of everything for speed
-testing=FALSE
 
 # directories
 workingdir='/Users/kirstin/Dropbox/SGDP/FLARe/FLARe_MASTER/Projects/Hierachal_modelling/Modelling'
 scriptdir='/Users/kirstin/Dropbox/SGDP/FLARe/FLARe_MASTER/Projects/Hierachal_modelling/Scripts'
 datadir='/Users/kirstin/Dropbox/SGDP/FLARe/FLARe_MASTER/Projects/LatentGrowth/Datasets/'
 
-# stan parameters
+## write function to set each block as test or not individually.
+## three testing levels - min, med, max. 
+## if off, then will set to normal stan paramter of 1000 warmup and 4000 iterations on 4 chains
 
-## When doing this properly do 1000 warm up and 4000 iterations.
+testing <- function(x) {
+  
+  if (x %in% c('min',"Min")) {
+    chain_iter<<-400
+    warm_up<<-100
+    chain_n<<-1
+  } else if ( x %in% c('med' ,'Med')) {
+    
+    chain_iter<<-1000
+    warm_up<<-500
+    chain_n<<-1
+    
+  } else if ( x %in% c('max','Max')) {
+    
+    chain_iter<<-2000
+    warm_up<<-1000
+    chain_n<<-2
+    
+  } else if ( x %in% c('off' ,'Off')) {
+    
+    chain_iter<<-4000
+    warm_up<<-1000
+    chain_n<<-4
+    
+  } else if ( x %in% c('skip' ,'Skip')) {
+    
+    chain_iter<<-0
+    warm_up<<-0
+    chain_n<<-0
+    
+  } 
 
-chain_iter=2000 # number of iterations for each chain inc. warmup (half)
-warm_up=1000
-if (testing==TRUE) chain_iter=400
-if (testing==TRUE)  warm_up=100
-chain_n=4 #4 chains
-if (testing==TRUE) chain_n=1
-
+}
 
 # create the n trials variable for RStan
 ntrials=12
@@ -955,7 +997,10 @@ Using data loaded in from preliminary tests above.
 so this is a beta value per person (assuming the underlying process for the plus and minus are the same)
 
 ```{r}
+## decide testing rate (min,med,max or off)
+testing('min')
 
+## set up run
 stanname='beta_noscaling.stan'
 
 stanfile <- file.path(scriptdir, stanname)
@@ -995,7 +1040,10 @@ Using data loaded in from preliminary tests above.
 so this is a beta value per person (assuming the underlying process for the plus and minus are the same)
 
 ```{r}
+## decide testing rate (min,med,max or off)
+testing('min')
 
+## set up run
 stanname='beta_scaling.stan'
 
 stanfile <- file.path(scriptdir, stanname)
@@ -1018,13 +1066,6 @@ summary_flare<- summary(flare_fit)
 
 ```
 
-
-## Model 4: reinforcement learning model, single beta, single alpha {.tabset}
-
-### notes
-
-this model includes an alpha learning paramater per person estimating their learning rate and updating based on it. This model needs a dataset that indicates whether a scream occurred for each trial instead of the proportion of times no scream occurred.
-
 ### run Alex Pike's stan script for scaled beta model.
 
 here we try to estimate the alpha paramter of the beta distribution per trial per person per stimulus. (i.e. you have two sufficient paramters for each beta dist, the alpha and beta. we want to estimate the alpha - ). 
@@ -1036,7 +1077,10 @@ Using data loaded in from preliminary tests above.
 so this is a beta value per person (assuming the underlying process for the plus and minus are the same)
 
 ```{r}
+## decide testing rate (min,med,max or off)
+testing('min')
 
+## set up run
 stanname='beta_withRL.stan'
 
 stanfile <- file.path(scriptdir, stanname)
@@ -1059,7 +1103,15 @@ summary_flare <- summary(flare_fit)
 
 ```
 
-### Add mean SD defining beta shape
+
+## Model 4: RL, mean defined, single beta {.tabset}
+
+### notes
+
+this model includes an alpha learning paramater per person estimating their learning rate and updating based on it. This model needs a dataset that indicates whether a scream occurred for each trial instead of the proportion of times no scream occurred.
+
+
+### Mean to define shape
 
 this model includes an alpha learning paramater per person estimating their learning rate and updating based on it. This model needs a dataset that indicates whether a scream occurred for each trial instead of the proportion of times no scream occurred.
 
@@ -1079,7 +1131,10 @@ $$\beta=\alpha \left(\frac{1}{\mu}-1\right)$$
 
 
 ```{r}
+## decide testing rate (min,med,max or off)
+testing('min')
 
+## set up run
 stanname='beta_meansd_RL.stan'
 
 stanfile <- file.path(scriptdir, stanname)
@@ -1093,7 +1148,7 @@ save(flare_fit, file=file.path(datadir,'flare_fit_test'))
 traceplot(flare_fit,'lp__')
 
 # extract fit data
-summary_flare<- summary(flare_fit)
+summary_flare_me<- summary(flare_fit)
 
 # extract model summary data
 
@@ -1102,13 +1157,66 @@ summary_flare<- summary(flare_fit)
 
 ```
 
+On 500 iterations (i.e. test) the variance in alpha is good, but the traceplot is terrible. Model coverges very poorly. We also have to constrain the beta to be betwqeen 0 and 0.0001. Not sure why this is. 
+
+when running for 2000 iterations (1000 warmup)...
+
+This results in the following warning;
+
+>> There were 2644 divergent transitions after warmup. Increasing adapt_delta above 0.8 may help. See
+http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmupThere were 4 transitions after warmup that exceeded the maximum treedepth. Increase max_treedepth above 10. See
+http://mc-stan.org/misc/warnings.html#maximum-treedepth-exceededThere were 4 chains where the estimated Bayesian Fraction of Missing Information was low. See
+http://mc-stan.org/misc/warnings.html#bfmi-lowExamine the pairs() plot to diagnose sampling problems
+
+### Mean defined differently
+
+the above mean definition does not map the data well (terrible traceplot!). I found [this from the MRC BSU](https://www.mrc-bsu.cam.ac.uk/wp-content/uploads/bugsbook_chapter5.pdf) and have tried defining the beta parameters assuming V == mean in a slighty different way:
+
+for paramater a:
+
+$$\alpha = \mu\beta/(1-\mu)$$
+
+for parameter b:
+
+$$\beta = \mu(1-\mu)^2/\sigma+\mu-1$$
+
+Still using a single beta here.
+
+
+```{r}
+## decide testing rate (min,med,max or off)
+testing('min')
+
+## set up run
+stanname='beta_meansd_RL_2.stan'
+
+stanfile <- file.path(scriptdir, stanname)
+
+flare_data<-list(ntrials=ntrials,nsub=nsub,screamPlus = t(screamPlus), screamMinus=t(screamMinus),ratingsPlus=t(plus_scaled),ratingsMinus=t(minus_scaled))
+
+flare_fit <- stan(file = stanfile, data = flare_data, iter=chain_iter, chains = chain_n) #add working dir?
+
+save(flare_fit, file=file.path(datadir,'flare_fit_test'))
+
+traceplot(flare_fit,'lp__')
+
+# extract fit data
+summary_flare_me<- summary(flare_fit)
+
+# extract model summary data
+
+#flare_loglike<- extract_log_lik(flare_fit, parameter_name = "loglik", merge_chains = TRUE)
+
+
+```
 
 #### questions
 
 * why does the beta RL mean sd not run unless beta is bounded between 0 and 0.0001??
 
+## Model 5: RL, mode defined, single beta {.tabset}
 
-### Define shape using the mode instead of mean
+### notes 
 
 Used [this post](http://doingbayesiandataanalysis.blogspot.com/2012/06/beta-distribution-parameterized-by-mode.html) to guide this. particularly:
 
@@ -1119,13 +1227,17 @@ a = mode * (k-2) + 1
 b = (1-mode) * (k-2) + 1
 
 
-We will assume that V is the mode (above we assumed it serves as the mean) and beta is the sd again.
 
-We need to derive k, and for this we need to solve for a & b first. So given we know the mode, we need to invert (a-1)/(a+b-2).
+### shape 1 as mode with v and beta as beta shape parameters 
 
-
+For this version we try and estimate the 'mode' to be shape 1. KIRSTIN:: explain here
 
 ```{r}
+## decide testing rate (min,med,max or off)
+
+testing('skip')
+
+## set up run
 
 stanname='beta_mode_RL.stan'
 
@@ -1149,12 +1261,56 @@ summary_flare<- summary(flare_fit)
 
 ```
 
-### mean sd RL model with beta per stimulus
+### v as mode
 
-RL model adding a beta per stimuli to Alex's model
+For this version we assume that V is the mode (above we assumed it serves as the mean) and beta is the certainty aspect (i.e. k)
 
+What this does is basically treat the expected rating (value) as the a parameter for the distribution (scaled by their certainity - beta) and 1-that value as the b parameter (again, scaled by the uncertainty). 
+
+so you have a ratio of their selected value per trial (mode across iterations?) to how far from the highest possible choice they are.
 ```{r}
 
+## decide testing rate (min,med,max or off)
+testing('med')
+
+## set up run
+stanname='beta_mode_RL_2.stan'
+
+stanfile <- file.path(scriptdir, stanname)
+
+flare_data<-list(ntrials=ntrials,nsub=nsub,screamPlus = t(screamPlus), screamMinus=t(screamMinus),ratingsPlus=t(plus_scaled),ratingsMinus=t(minus_scaled))
+
+flare_fit <- stan(file = stanfile, data = flare_data, iter=chain_iter, chains = chain_n) #add working dir?
+
+save(flare_fit, file=file.path(datadir,'flare_fit_test'))
+
+traceplot(flare_fit,'lp__')
+
+# extract fit data
+summary_flare<- summary(flare_fit)
+
+# extract model summary data
+
+#flare_loglike<- extract_log_lik(flare_fit, parameter_name = "loglik", merge_chains = TRUE)
+
+
+```
+
+This works, but there is not a lot of variance in the alpha paramter when described by mode mean 0.49; sd = 0.06. Compared to defined by mean where mean is 0.54 and sd is 0.26.
+
+However there is a lot of variation in the beta paramter (mean -7.21, sd = 134.74)
+
+## Model 6: reinforcement learning model, mean defined,two beta {.tabset}
+
+### mean sd RL model with beta per stimulus
+
+RL model adding a beta per stimulus to Alex's model
+
+```{r}
+## decide testing rate (min,med,max or off)
+testing('min')
+
+## set up run
 stanname='beta_meansd_2beta_RL.stan'
 
 stanfile <- file.path(scriptdir, stanname)
@@ -1177,13 +1333,19 @@ summary_flare <- summary(flare_fit)
 
 ```
 
+
+## Model 7: RL mode defined,two beta {.tabset}
+
 ### mode sd RL model with beta per stimulus
 
-RL model adding a beta per stimuli to model defining the beta shape using the mode instead of the mean.
+RL model adding a beta per stimuli to model defining the beta shape using the mode instead of the mean. This definitely makes more sense as we assume that they will have different levels of uncertainty about each
 
 ```{r}
+## decide testing rate (min,med,max or off)
+testing('med')
 
-stanname='beta_mode_2beta_RL.stan'
+## set up run
+stanname='beta_mode_2beta_RL_2.stan'
 
 stanfile <- file.path(scriptdir, stanname)
 
@@ -1206,12 +1368,14 @@ summary_flare <- summary(flare_fit)
 ```
 
 
+The alpha parameter variance is still limited (mean 0.09, sd 0.04). Beta is much more bounded now though (combined across both stimuli mean 0.75, sd=1.58) over 2000 iterations.
+
+
+
 # to do
 
-
-
-* per trial for beta_noscaling
-
+* get means working.
+* add log likelihood to scripts
 
 # Push any updates to github 
 

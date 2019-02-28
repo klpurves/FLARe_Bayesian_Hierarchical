@@ -11,7 +11,7 @@ data {
 
 parameters {
   real <lower=0,upper=1>alpha[nsub]; //learning rate
-  real <lower=0,upper=0.0001> beta[nsub,2]; //calculate distribution variance.
+  real <lower=0,upper=1> beta[nsub]; //calculate distribution variance.
                                           //Basically how confident they are when rating
                                           // related to uncertainty possibly?
                                           // to add 2, beta[nsub,2] and where used [p,1] or [p,2] by shape
@@ -42,11 +42,11 @@ model {
 
     for (t in 1:ntrials){
 
-      shape1_Plus[t,p] = (VPlus[t,p] * shape2_Plus[t,p])/(1-VPlus[t,p]);
+      shape1_Plus[t,p] = (VPlus[t,p] * shape2_Plus[t,p])/(1-VPlus[t,p]);     //a = mb/(1-m)
       shape1_Minus[t,p] = (VMinus[t,p] * shape2_Minus[t,p])/(1-VMinus[t,p]);
 
-      shape2_Plus[t,p] = VPlus[t,p]*(1-VPlus[t,p])^2/beta[p,1] + VPlus[t,p] -1;
-      shape2_Minus[t,p] = VMinus[t,p]*(1-VMinus[t,p])^2/beta[p,1] + VMinus[t,p] -1;
+      shape2_Plus[t,p] = (VPlus[t,p] * (1-VPlus[t,p])^2 / beta[p] + VPlus[t,p] -1);     // b=m(1-m)^2/var+m-1
+      shape2_Minus[t,p] = (VMinus[t,p] * (1-VMinus[t,p])^2 / beta[p] + VMinus[t,p] -1);
 
       ratingsPlus[t,p] ~ beta(shape1_Plus[t,p],shape2_Plus[t,p]);
       ratingsMinus[t,p] ~ beta(shape1_Minus[t,p],shape2_Minus[t,p]);

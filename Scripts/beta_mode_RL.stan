@@ -9,7 +9,7 @@ data {
 
 parameters {
   real <lower=0,upper=1>alpha[nsub]; //learning rate
-  real <lower=0.00001,upper=0.0001> beta[nsub]; //calculate distribution variance.
+  real <lower=0,upper=0.0001> beta[nsub]; //calculate distribution variance.
                                           //Basically how confident they are when rating
                                           // related to uncertainty possibly?
                                           // to add 2, beta[nsub,2] and where used [p,1] or [p,2] by shape
@@ -26,8 +26,6 @@ model {
   real VMinus[ntrials,nsub]; // value CS-
   real deltaPlus[ntrials-1,nsub]; // prediction error for  CS+
   real deltaMinus[ntrials-1,nsub];    // prediction error for CS-
-  real kPlus[ntrials,nsub]; // k value (nEff of prior)
-  real kMinus[ntrials,nsub]; // k value (nEff of prior)
 
 
   for (p in 1:nsub){
@@ -41,14 +39,10 @@ model {
     }
 
     for (t in 1:ntrials){
-      kPlus[t,p] = shape1_Plus[t,p] + shape2_Plus[t,p];
-      kMinus[t,p] = shape1_Minus[t,p] + shape2_Minus[t,p];
-
-      shape1_Plus[t,p] = VPlus[t,p] * (kPlus[t,p]-2) + 1;
-      shape1_Minus[t,p] = VMinus[t,p] * (kMinus[t,p] -2) + 1;
-
-      shape2_Plus[t,p] = (1-VPlus[t,p]) * (kPlus[t,p]-2) + 1;
-      shape2_Minus[t,p] = (1-VMinus[t,p]) * (kMinus[t,p]-2) + 1;
+      shape1_Plus[t,p] = (VPlus[t,p] -1) /(VPlus[t,p] + beta[p] - 2);  // assuming that Vplus and beta are our shape paramters
+      shape1_Minus[t,p] = (VMinus[t,p] -1) /(VMinus[t,p] + beta[p] - 2);
+      shape2_Plus[t,p] = shape1_Plus[t,p]*(1/VPlus[t,p]-1);         // sd - keep for mode definition
+      shape2_Minus[t,p] = shape1_Minus[t,p]*(1/VMinus[t,p]-1);      // sd - keep for mode definition
 
       ratingsPlus[t,p] ~ beta(shape1_Plus[t,p],shape2_Plus[t,p]);
       ratingsMinus[t,p] ~ beta(shape1_Minus[t,p],shape2_Minus[t,p]);
