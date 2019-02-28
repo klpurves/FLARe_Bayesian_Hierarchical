@@ -312,14 +312,14 @@ out_describe <- function(summary){
 print(paste0(chain_iter, " iterations ", ' on ', chain_n,' chains.',sep=" "))
 print(" ")
 print('Alpha descriptives')
-describe(summary$summary[1:342])
+print(describe(summary$summary[1:342]))
 print(" ")
 
 print('Combined beta descriptives')
-describe(summary$summary[342:dim(summary$summary)[1]-1])
+print(describe(summary$summary[342:dim(summary$summary)[1]-1]))
 print(" ")
 print('Average Rhat')
-mean(summary$summary[,10])
+print(mean(summary$summary[,10]))
 
 }
 
@@ -1037,11 +1037,12 @@ summary_flare<- summary(flare_fit)
 
 #flare_loglike<- extract_log_lik(flare_fit, parameter_name = "loglik", merge_chains = TRUE)
 
+```
 
+```{r}
 ## get some basic output descriptions printed to screen
 
 out_describe(summary_flare)
-
 
 ```
 
@@ -1085,13 +1086,12 @@ summary_flare<- summary(flare_fit)
 
 #flare_loglike<- extract_log_lik(flare_fit, parameter_name = "loglik", merge_chains = TRUE)
 
+```
 
+```{r}
 ## get some basic output descriptions printed to screen
 
 out_describe(summary_flare)
-
-
-
 
 ```
 
@@ -1129,11 +1129,12 @@ summary_flare <- summary(flare_fit)
 
 #flare_loglike<- extract_log_lik(flare_fit, parameter_name = "loglik", merge_chains = TRUE)
 
+```
 
+```{r}
 ## get some basic output descriptions printed to screen
 
 out_describe(summary_flare)
-
 
 ```
 
@@ -1188,7 +1189,9 @@ summary_flare<- summary(flare_fit)
 
 #flare_loglike<- extract_log_lik(flare_fit, parameter_name = "loglik", merge_chains = TRUE)
 
+```
 
+```{r}
 ## get some basic output descriptions printed to screen
 
 out_describe(summary_flare)
@@ -1239,17 +1242,18 @@ save(flare_fit, file=file.path(datadir,'flare_fit_test'))
 traceplot(flare_fit,'lp__')
 
 # extract fit data
-summary_flare_me<- summary(flare_fit)
+summary_flare<- summary(flare_fit)
 
 # extract model summary data
 
 #flare_loglike<- extract_log_lik(flare_fit, parameter_name = "loglik", merge_chains = TRUE)
 
+```
 
+```{r}
 ## get some basic output descriptions printed to screen
 
 out_describe(summary_flare)
-
 
 ```
 
@@ -1273,14 +1277,14 @@ $$\beta=\alpha \left(\frac{1}{\mu}-1\right)$$
 to 
 
 
-$$\alpha = \left(\frac{1-\mu}{\sigma} - \frac{1}{\mu}\right)\mu\left(1-\mu\right)$$
+$$\beta = \left(\frac{1-\mu}{\sigma} - \frac{1}{\mu}\right)\mu\left(1-\mu\right)$$
 
 
 
 
 ```{r}
 ## decide testing rate (min,med,max or off)
-testing('min')
+testing('med')
 
 ## set up run
 stanname='beta_meansd_RL_3.stan'
@@ -1296,21 +1300,26 @@ save(flare_fit, file=file.path(datadir,'flare_fit_test'))
 traceplot(flare_fit,'lp__')
 
 # extract fit data
-summary_flare_me<- summary(flare_fit)
+summary_flare<- summary(flare_fit)
 
 # extract model summary data
 
 #flare_loglike<- extract_log_lik(flare_fit, parameter_name = "loglik", merge_chains = TRUE)
 
+```
 
+```{r}
 ## get some basic output descriptions printed to screen
 
 out_describe(summary_flare)
 
-
-
-
 ```
+
+This model is substnatially better than either of the other two.traceplot suggests that the iterations converge as we would like. However, we still need to massively constrain the beta estimates for it to run, otherwise the starting values drop below zero.
+
+this needs to be investigated...
+
+
 #### questions
 
 * why does the beta RL mean sd not run unless beta is bounded between 0 and 0.0001??
@@ -1359,14 +1368,12 @@ summary_flare<- summary(flare_fit)
 
 #flare_loglike<- extract_log_lik(flare_fit, parameter_name = "loglik", merge_chains = TRUE)
 
+```
 
-
+```{r}
 ## get some basic output descriptions printed to screen
 
 out_describe(summary_flare)
-
-
-
 
 ```
 
@@ -1402,13 +1409,12 @@ summary_flare<- summary(flare_fit)
 
 #flare_loglike<- extract_log_lik(flare_fit, parameter_name = "loglik", merge_chains = TRUE)
 
+```
 
+```{r}
 ## get some basic output descriptions printed to screen
 
 out_describe(summary_flare)
-
-
-
 
 ```
 
@@ -1416,7 +1422,7 @@ This works, but there is not a lot of variance in the alpha paramter when descri
 
 However there is a lot of variation in the beta paramter (mean -7.21, sd = 134.74)
 
-## Model 5: reinforcement learning model, mean defined,two beta {.tabset}
+## Model 5: RL mean defined,two beta {.tabset}
 
 ### mean sd RL model with beta per stimulus
 
@@ -1446,7 +1452,9 @@ summary_flare <- summary(flare_fit)
 
 #flare_loglike<- extract_log_lik(flare_fit, parameter_name = "loglik", merge_chains = TRUE)
 
+```
 
+```{r}
 ## get some basic output descriptions printed to screen
 
 out_describe(summary_flare)
@@ -1485,12 +1493,12 @@ summary_flare <- summary(flare_fit)
 #flare_loglike<- extract_log_lik(flare_fit, parameter_name = "loglik", merge_chains = TRUE)
 
 
+```
 
+```{r}
 ## get some basic output descriptions printed to screen
 
 out_describe(summary_flare)
-
-
 
 ```
 

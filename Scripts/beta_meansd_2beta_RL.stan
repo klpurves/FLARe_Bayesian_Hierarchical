@@ -41,8 +41,9 @@ model {
     for (t in 1:ntrials){
       shape1_Plus[t,p] = ((1-VPlus[t,p])/beta[p,1] - 1/VPlus[t,p])*(VPlus[t,p])^2;
       shape1_Minus[t,p] = ((1-VMinus[t,p])/beta[p,2] - 1/VMinus[t,p])*(VMinus[t,p])^2;
-      shape2_Plus[t,p] = shape1_Plus[t,p]*(1/VPlus[t,p]-1);
-      shape2_Minus[t,p] = shape1_Minus[t,p]*(1/VMinus[t,p]-1);
+      shape2_Plus[t,p] = ((1-VPlus[t,p])/beta[p,1] - 1/VPlus[t,p])*(1/VPlus[t,p]-1);
+      shape2_Minus[t,p] = ((1-VMinus[t,p])/beta[p,2] - 1/VMinus[t,p])*(1/VMinus[t,p]-1);
+
 
       ratingsPlus[t,p] ~ beta(shape1_Plus[t,p],shape2_Plus[t,p]);
       ratingsMinus[t,p] ~ beta(shape1_Minus[t,p],shape2_Minus[t,p]);
