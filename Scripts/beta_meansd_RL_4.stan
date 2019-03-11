@@ -1,5 +1,5 @@
-//slight edit to the shape2 paramter. Begins with the same as shape 1 but does not use shape one entirely.
-// see lab book for detail
+// Defining beta shape paramters using paramter estimation from here
+// http://quantdevel.com/public/CSP2017/ModelingProportionsAndProbabilities.pdf
 
 data {
   int nsub; //number of participants
@@ -12,7 +12,7 @@ data {
 
 parameters {
   real <lower=0,upper=1>alpha[nsub]; //learning rate
-  real <lower=0,upper=0.0001> beta[nsub]; //calculate distribution variance.
+  real <lower=0> beta[nsub]; //calculate distribution variance.
                                           //Basically how confident they are when rating
                                           // related to uncertainty possibly?
                                           // to add 2, beta[nsub,2] and where used [p,1] or [p,2] by shape
@@ -42,10 +42,10 @@ model {
     }
 
     for (t in 1:ntrials){
-      shape1_Plus[t,p] = ((1-VPlus[t,p])/beta[p] - 1/VPlus[t,p])*(VPlus[t,p])^2;
-      shape1_Minus[t,p] = ((1-VMinus[t,p])/beta[p] - 1/VMinus[t,p])*(VMinus[t,p])^2;
-      shape2_Plus[t,p] = ((1-VPlus[t,p])/beta[p] - 1/VPlus[t,p])*(1/VPlus[t,p]-1);
-      shape2_Minus[t,p] = ((1-VMinus[t,p])/beta[p] - 1/VMinus[t,p])*(1/VMinus[t,p]-1);
+      shape1_Plus[t,p] = VPlus[t,p] * ((VPlus[t,p] * (1-VPlus[t,p])) / beta[p]);
+      shape1_Minus[t,p] = VMinus[t,p] * ((VMinus[t,p] * (1-VMinus[t,p])) / beta[p]);
+      shape2_Plus[t,p] = (1-VPlus[t,p]) * ((VPlus[t,p] * (1-VPlus[t,p])) / beta[p]);
+      shape2_Minus[t,p] = (1-VMinus[t,p]) * ((VMinus[t,p] * (1-VMinus[t,p])) / beta[p]);
 
       ratingsPlus[t,p] ~ beta(shape1_Plus[t,p],shape2_Plus[t,p]);
       ratingsMinus[t,p] ~ beta(shape1_Minus[t,p],shape2_Minus[t,p]);
@@ -53,14 +53,15 @@ model {
   }
 }
 
+
 // below is what will generate the log likelihoods.
 
 generated quantities { //does the same calculations again for the fitted values
   real loglik[nsub];  // logliklihood paramter
-  real <lower = 0>shape1_Plus[ntrials,nsub]; //shape parameter 1 CS+
-  real <lower = 0>shape1_Minus[ntrials,nsub]; // shape parameter 1 CS-
-  real <lower = 0>shape2_Plus[ntrials,nsub]; // shape paramter 2 CS+
-  real <lower = 0>shape2_Minus[ntrials,nsub]; // shape paramter 2 CS-
+  real shape1_Plus[ntrials,nsub]; //shape parameter 1 CS+
+  real shape1_Minus[ntrials,nsub]; // shape parameter 1 CS-
+  real shape2_Plus[ntrials,nsub]; // shape paramter 2 CS+
+  real shape2_Minus[ntrials,nsub]; // shape paramter 2 CS-
 
 
   real VPlus[ntrials,nsub]; // value CS+
@@ -80,15 +81,13 @@ generated quantities { //does the same calculations again for the fitted values
     }
 
     for (t in 1:ntrials){
-      shape1_Plus[t,p] = ((1-VPlus[t,p])/beta[p] - 1/VPlus[t,p])*(VPlus[t,p])^2;
-      shape1_Minus[t,p] = ((1-VMinus[t,p])/beta[p] - 1/VMinus[t,p])*(VMinus[t,p])^2;
-      shape2_Plus[t,p] = ((1-VPlus[t,p])/beta[p] - 1/VPlus[t,p])*(1/VPlus[t,p]-1);
-      shape2_Minus[t,p] = ((1-VMinus[t,p])/beta[p] - 1/VMinus[t,p])*(1/VMinus[t,p]-1);
+      shape1_Plus[t,p] = VPlus[t,p] * ((VPlus[t,p] * (1-VPlus[t,p])) / beta[p]);
+      shape1_Minus[t,p] = VMinus[t,p] * ((VMinus[t,p] * (1-VMinus[t,p])) / beta[p]);
+      shape2_Plus[t,p] = (1-VPlus[t,p]) * ((VPlus[t,p] * (1-VPlus[t,p])) / beta[p]);
+      shape2_Minus[t,p] = (1-VMinus[t,p]) * ((VMinus[t,p] * (1-VMinus[t,p])) / beta[p]);
 
       // increments the log likelihood trial by trial using the log choice prob and parameters estimated in the model block
-      loglik[p] +=
-         beta_lpdf(ratingsPlus[t,p]|shape1_Plus[t,p],shape2_Plus[t,p]) +
-         beta_lpdf(ratingsMinus[t,p]|shape1_Minus[t,p],shape2_Minus[t,p]);
+      loglik[p] += beta_lpdf(ratingsPlus[t,p] | shape1_Plus[t,p],shape2_Plus[t,p]);
     }
   }
 }

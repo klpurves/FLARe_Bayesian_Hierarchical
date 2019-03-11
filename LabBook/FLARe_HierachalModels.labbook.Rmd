@@ -156,6 +156,21 @@ Might be worth incorporating this as a model paramater / feature. Read this for 
 
 [Hypotheses About the Relationship of Cognition With Psychopathology Should be Tested by Embedding Them Into Empirical Priors (Moutoussist et al., 2018)](https://www.frontiersin.org/articles/10.3389/fpsyg.2018.02504/full)
 
+### Log likelihood notes
+
+As we are using a beta distribution, we will calculate log likelihood based on the probability function for the distribution (i.e. where will the peak of the shape be) given the participants response at each trial. So will add the probability density function given each trial response trial by trial for each of the CS+ and - summed together.
+
+Will obtain 1 log likelihood and then 1 per trial and add together to make sure that these are comparable.
+
+
+the basic stan terminology for this is below: 
+
+>> beta_lpdf(rating[t,p]|shape1[t,p],shape2[t,p])
+
+where beta_lpdf is the probability density given the rating made and each of the two beta distribution shape paramters that we estimate.
+
+This is what we will use to compare models.
+
 ### Terminology
 
 *V* == 'value'. Baasically a paramter that is about the salience of the stimulus at any given point.    
@@ -167,6 +182,10 @@ Can be confusing as we are using beta distributions (different thing) which has 
 ### Beta distribution visualisation
 
 and how they change depending on whether you change the beta or alpha paramters.
+
+![A really nice summary visualisation](/Users/kirstin/Dropbox/Screenshots/beta_dist.png)
+
+Here are some simulations I can change and play with the illustrate the same sort of thing. 
 
 
 ```{r,echo=F}
@@ -1279,12 +1298,19 @@ to
 
 $$\beta = \left(\frac{1-\mu}{\sigma} - \frac{1}{\mu}\right)\mu\left(1-\mu\right)$$
 
+Because this works best, will add loglikelihhod calculation here. Basing this on the probability density function for the beta distribution given the participants actual ratings and sufficient paramters of the distribution per trial.
 
+>>>loglik[p] =  loglik[p] +
+         beta_lpdf(ratingsPlus[t,p]|shape1_Plus[t,p],shape2_Plus[t,p]) +
+         beta_lpdf(ratingsMinus[t,p]|shape1_Minus[t,p],shape2_Minus[t,p])
+         
+         
+         
 
 
 ```{r}
 ## decide testing rate (min,med,max or off)
-testing('med')
+testing('min')
 
 ## set up run
 stanname='beta_meansd_RL_3.stan'
@@ -1304,7 +1330,7 @@ summary_flare<- summary(flare_fit)
 
 # extract model summary data
 
-#flare_loglike<- extract_log_lik(flare_fit, parameter_name = "loglik", merge_chains = TRUE)
+flare_loglike<- extract_log_lik(flare_fit, parameter_name = "loglik", merge_chains = TRUE)
 
 ```
 
@@ -1315,10 +1341,52 @@ out_describe(summary_flare)
 
 ```
 
-This model is substnatially better than either of the other two.traceplot suggests that the iterations converge as we would like. However, we still need to massively constrain the beta estimates for it to run, otherwise the starting values drop below zero.
+This model is substnatially better than either of the other two. Traceplot suggests that the iterations converge as we would like. However, we still need to massively constrain the beta (i.e. confidence / uncertainty) estimates for it to run, otherwise the starting values drop below zero. 
 
-this needs to be investigated...
 
+### Mean definition 4
+
+Here I try to define the parameter using simplified mean and precision estimates as per [this tutorial](http://quantdevel.com/public/CSP2017/ModelingProportionsAndProbabilities.pdf). See in particular the paramter estimation on the cubs data.
+
+
+This results in a relatively simplified paramter estimation compared to model 3. 
+
+$$\alpha = \mu * ((\mu * (1-\mu)) / \sigma - 1)$$
+
+where mu is the mean (or value) and sigma is the variance / uncertainty paramter we currently call beta.
+
+and the b (or shape 2) parameter for the distribution is:
+
+$$\beta = (1- \mu) * ((\mu * (1-\mu)) / \sigma - 1)$$
+
+
+
+
+```{r}
+## decide testing rate (min,med,max or off)
+testing('min')
+
+## set up run
+stanname='beta_meansd_RL_4.stan'
+
+stanfile <- file.path(scriptdir, stanname)
+
+flare_data<-list(ntrials=ntrials,nsub=nsub,screamPlus = t(screamPlus), screamMinus=t(screamMinus),ratingsPlus=t(plus_scaled),ratingsMinus=t(minus_scaled))
+
+flare_fit <- stan(file = stanfile, data = flare_data, iter=chain_iter, chains = chain_n) #add working dir?
+
+save(flare_fit, file=file.path(datadir,'flare_fit_test'))
+
+traceplot(flare_fit,'lp__')
+
+# extract fit data
+summary_flare<- summary(flare_fit)
+
+# extract model summary data
+
+#flare_loglike<- extract_log_lik(flare_fit, parameter_name = "loglik", merge_chains = TRUE)
+
+```
 
 #### questions
 
