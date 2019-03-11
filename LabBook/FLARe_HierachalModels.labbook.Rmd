@@ -308,7 +308,7 @@ testing <- function(x) {
 
 out_describe <- function(summary){
   
-  
+library(psych)
 print(paste0(chain_iter, " iterations ", ' on ', chain_n,' chains.',sep=" "))
 print(" ")
 print('Alpha descriptives')
@@ -316,7 +316,7 @@ print(describe(summary$summary[1:342]))
 print(" ")
 
 print('Combined beta descriptives')
-print(describe(summary$summary[342:dim(summary$summary)[1]-1]))
+print(describe(summary$summary[343:dim(summary$summary)[1]-2]))
 print(" ")
 print('Average Rhat')
 print(mean(summary$summary[,10]))
