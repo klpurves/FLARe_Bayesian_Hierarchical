@@ -49,3 +49,39 @@ model {
     }
   }
 }
+
+
+model {
+  real shape1_Plus[ntrials,nsub]; //shape parameter 1 CS+
+  real shape1_Minus[ntrials,nsub]; // shape parameter 1 CS-
+  real shape2_Plus[ntrials,nsub]; // shape paramter 2 CS+
+  real shape2_Minus[ntrials,nsub]; // shape paramter 2 CS-
+
+
+  real VPlus[ntrials,nsub]; // value CS+
+  real VMinus[ntrials,nsub]; // value CS-
+  real deltaPlus[ntrials-1,nsub]; // prediction error for  CS+
+  real deltaMinus[ntrials-1,nsub];    // prediction error for CS-
+
+
+  for (p in 1:nsub){
+    VPlus[1,p]=0.5;
+    VMinus[1,p]=0.5;
+    for (t in 1:(ntrials-1)){
+      deltaPlus[t,p] = screamPlus[t,p]-VPlus[t,p]; // prediction error calc CS+
+      deltaMinus[t,p] = screamMinus[t,p]-VMinus[t,p]; // ditto CS-
+      VPlus[t+1,p]=VPlus[t,p]+alpha[p]*deltaPlus[t,p]; // value calc CS+
+      VMinus[t+1,p]=VMinus[t,p]+alpha[p]*deltaPlus[t,p]; // ditto CS-
+    }
+
+    for (t in 1:ntrials){
+      shape1_Plus[t,p] = (VPlus[t,p] -1) /(VPlus[t,p] + beta[p] - 2);  // assuming that Vplus and beta are our shape paramters
+      shape1_Minus[t,p] = (VMinus[t,p] -1) /(VMinus[t,p] + beta[p] - 2);
+      shape2_Plus[t,p] = shape1_Plus[t,p]*(1/VPlus[t,p]-1);         // sd - keep for mode definition
+      shape2_Minus[t,p] = shape1_Minus[t,p]*(1/VMinus[t,p]-1);      // sd - keep for mode definition
+
+      ratingsPlus[t,p] ~ beta(shape1_Plus[t,p],shape2_Plus[t,p]);
+      ratingsMinus[t,p] ~ beta(shape1_Minus[t,p],shape2_Minus[t,p]);
+    }
+  }
+}

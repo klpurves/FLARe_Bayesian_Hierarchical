@@ -8,6 +8,7 @@ data {
   real screamMinus[ntrials,nsub]; //scream CS-
   real ratingsPlus[ntrials,nsub]; //rating per sub per trial 0-1
   real ratingsMinus[ntrials,nsub]; //rating per sub per trial 0-1
+  real cdf_scale; // scaled 0.5 for adjusting from discrete values in beta dist. Scaled as per the ratings
 }
 
 parameters {
@@ -47,6 +48,7 @@ model {
       shape2_Plus[t,p] = (1-VPlus[t,p]) * ((VPlus[t,p] * (1-VPlus[t,p])) / beta[p]);
       shape2_Minus[t,p] = (1-VMinus[t,p]) * ((VMinus[t,p] * (1-VMinus[t,p])) / beta[p]);
 
+
       ratingsPlus[t,p] ~ beta(shape1_Plus[t,p],shape2_Plus[t,p]);
       ratingsMinus[t,p] ~ beta(shape1_Minus[t,p],shape2_Minus[t,p]);
     }
@@ -70,7 +72,10 @@ generated quantities { //does the same calculations again for the fitted values
   real deltaMinus[ntrials-1,nsub];    // prediction error for CS-
 
 
+
+
   for (p in 1:nsub){
+    loglik[p]=0;
     VPlus[1,p]=0.5;
     VMinus[1,p]=0.5;
     for (t in 1:(ntrials-1)){
@@ -86,8 +91,13 @@ generated quantities { //does the same calculations again for the fitted values
       shape2_Plus[t,p] = (1-VPlus[t,p]) * ((VPlus[t,p] * (1-VPlus[t,p])) / beta[p]);
       shape2_Minus[t,p] = (1-VMinus[t,p]) * ((VMinus[t,p] * (1-VMinus[t,p])) / beta[p]);
 
+    //  print(beta_lpdf(ratingsPlus[t,p] | shape1_Plus[t,p],shape2_Plus[t,p]))
+
       // increments the log likelihood trial by trial using the log choice prob and parameters estimated in the model block
-      loglik[p] += beta_lpdf(ratingsPlus[t,p] | shape1_Plus[t,p],shape2_Plus[t,p]);
+      loglik[p] += beta_lcdf((ratingsPlus[t,p] + cdf_scale) | shape1_Plus[t,p],shape2_Plus[t,p]) +
+      beta_lcdf((ratingsPlus[t,p] - cdf_scale) | shape1_Plus[t,p],shape2_Plus[t,p]) +
+      beta_lcdf((ratingsMinus[t,p] + cdf_scale) | shape1_Minus[t,p],shape2_Minus[t,p]) +
+      beta_lcdf((ratingsMinus[t,p] - cdf_scale) | shape1_Minus[t,p],shape2_Minus[t,p]);
     }
   }
 }

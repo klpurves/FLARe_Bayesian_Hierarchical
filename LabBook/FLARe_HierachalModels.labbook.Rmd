@@ -116,6 +116,10 @@ So, best model is likely to be one using beta distributions that show the probab
 
 We can use sufficient parameters to describe these (i.e. mean / sd or possibly the mode)
 
+A useful intuition of the beta distribtion can be found [here](https://stats.stackexchange.com/questions/47771/what-is-the-intuition-behind-beta-distribution)
+
+and a useful website [here](https://matthewdharris.com/2016/10/18/estimating-a-beta-distribution-with-stan-hmc/)
+
 *scaling*
 
 We can scale the beta by how aversive participants find the shock. i.e. it might update their learning as if there was .5 a shock or 1.5 of a shock depending on their own sensitivity to the aversiveness / punishment.
@@ -282,6 +286,8 @@ The settings for the script are below, including stan chain paramters and direct
 
 #rm(list=ls())
 
+library(tibble)
+
 # directories
 workingdir='/Users/kirstin/Dropbox/SGDP/FLARe/FLARe_MASTER/Projects/Hierachal_modelling/Modelling'
 scriptdir='/Users/kirstin/Dropbox/SGDP/FLARe/FLARe_MASTER/Projects/Hierachal_modelling/Scripts'
@@ -325,26 +331,36 @@ testing <- function(x) {
 
 }
 
-out_describe <- function(summary){
+out_describe<- function(summary){
   
 library(psych)
 print(paste0(chain_iter, " iterations ", ' on ', chain_n,' chains.',sep=" "))
-print(" ")
-print('Alpha descriptives')
-print(describe(summary$summary[1:342]))
-print(" ")
 
-print('Combined beta descriptives')
-print(describe(summary$summary[343:dim(summary$summary)[1]-2]))
+print(paste0("Estimated",(dim(summary$summary)[1]-1) / 342,"Free paramaters per person",sep=" "))
 print(" ")
 print('Average Rhat')
-print(mean(summary$summary[,10]))
+print(mean(!is.na(summary$summary[,10])))
+
+count <- 1
+
+while (count < (dim(summary$summary)[1]-1)){
+  
+  print(row.names(summary$summary)[count])
+  print(" ")
+  print(describe((summary$summary[count:(count+341),1])))
+  print(" ")
+  count <- count+342
+
+}
 
 }
 
 # create the n trials variable for RStan
 ntrials=12
 
+## canonical BIC function
+
+bic<-function(trials,neg_log_like,nparam) 2*neg_log_like+nparam*log(trials) #canonical
 
 ```
 
@@ -939,6 +955,7 @@ rescale the 1-9 expectancy values to be on a 0-1 scale.
 
 stan cannot deal with the extreme limit of the beta, so make the rescaled limits just above 0 and below one
 
+Note that when a value had to be imputed as it was missing it will not be an integer. Thus the function needs to allow for ranges between values.
 
 ```{r}
 
@@ -946,8 +963,59 @@ library(scales)
 
 # rescale and flip so that we are effectively rating the expectation that they WILL NOT hear a scream to match stan
 
-minus_scaled <- data.frame(apply(minus,2,function(x) 1-rescale(x, to=c(0.00001,0.99999))))
-plus_scaled <- data.frame(apply(plus,2,function(x) 1-rescale(x, to=c(0.00001,0.99999))))
+## rescaling such that the distribution spaces the numbers 1-9 evenly. the first interval upper bound would be 0.11, then 0.22 etc. this means that the mid point of each itnerval will be:
+
+print("mid point of each evenly spaced interval representing values between 1-9")
+seq(0.5/9,1,1/9)
+
+
+## thus 1 will be 1-0.055 etc.
+
+## NOTE: might want to consider making this more flexible. enter in the numer of choice options as a variable - would be very easy. add to function library at later stage
+
+scale_flare <- function(x){
+  
+  vals <- seq(0.5/9,1,1/9)
+  
+  for (val in 1:9){
+    if (x > val-1 & x <= val){
+      x <- 1 - vals[val]
+    }
+  }
+  return(x)
+}
+
+
+## initialise minus_scaled dataframe.
+
+minus_scaled <- data.frame(matrix(ncol=dim(minus)[2],nrow = dim(minus)[1]))
+
+##  populate with rexcaled values
+
+for (sub in 1:dim(minus)[1]){
+  for (col in 1:dim(minus)[2]){
+    
+    minus_scaled[sub,col] <- scale_flare(minus[sub,col])
+  }
+}
+
+## ditto for plus
+
+plus_scaled <- data.frame(matrix(ncol=dim(minus)[2],nrow = dim(minus)[1]))
+
+for (sub in 1:dim(plus)[1]){
+  for (col in 1:dim(plus)[2]){
+    
+    plus_scaled[sub,col] <- scale_flare(plus[sub,col])
+  }
+}
+
+
+
+## this is the number that will take from the midpoint to the top and bottom for the new boundaries (with ratings representing the midpoint)
+
+cdf_scale <- 1/18
+
 
 
 
@@ -1010,6 +1078,14 @@ for (n in 1:dim(screamPlus)[1]) {
 
 ```
 
+## Create dataset for barplot comparing output
+
+```{r}
+library(ggplot2)
+
+mod_comp <- data.frame(model=NA,BIC=NA)
+
+```
 
 ## Model 1: single beta no scaling {.tabset}
 
@@ -1182,38 +1258,38 @@ for shape 2:
 
 $$\beta=\alpha \left(\frac{1}{\mu}-1\right)$$
 
-
+Hashed this out as it doesnt run!
 
 ```{r}
-## decide testing rate (min,med,max or off)
-testing('min')
-
-## set up run
-stanname='beta_meansd_RL.stan'
-
-stanfile <- file.path(scriptdir, stanname)
-
-flare_data<-list(ntrials=ntrials,nsub=nsub,screamPlus = t(screamPlus), screamMinus=t(screamMinus),ratingsPlus=t(plus_scaled),ratingsMinus=t(minus_scaled))
-
-flare_fit <- stan(file = stanfile, data = flare_data, iter=chain_iter, chains = chain_n) #add working dir?
-
-save(flare_fit, file=file.path(datadir,'flare_fit_test'))
-
-traceplot(flare_fit,'lp__')
-
-# extract fit data
-summary_flare<- summary(flare_fit)
-
-# extract model summary data
-
-#flare_loglike<- extract_log_lik(flare_fit, parameter_name = "loglik", merge_chains = TRUE)
+# ## decide testing rate (min,med,max or off)
+# testing('min')
+# 
+# ## set up run
+# stanname='beta_meansd_RL.stan'
+# 
+# stanfile <- file.path(scriptdir, stanname)
+# 
+# flare_data<-list(ntrials=ntrials,nsub=nsub,screamPlus = t(screamPlus), screamMinus=t(screamMinus),ratingsPlus=t(plus_scaled),ratingsMinus=t(minus_scaled))
+# 
+# flare_fit <- stan(file = stanfile, data = flare_data, iter=chain_iter, chains = chain_n) #add working dir?
+# 
+# save(flare_fit, file=file.path(datadir,'flare_fit_test'))
+# 
+# traceplot(flare_fit,'lp__')
+# 
+# # extract fit data
+# summary_flare<- summary(flare_fit)
+# 
+# # extract model summary data
+# 
+# #flare_loglike<- extract_log_lik(flare_fit, parameter_name = "loglik", merge_chains = TRUE)
 
 ```
 
 ```{r}
 ## get some basic output descriptions printed to screen
 
-out_describe(summary_flare)
+# out_describe(summary_flare)
 
 ```
 
@@ -1243,27 +1319,29 @@ $$\beta = \mu(1-\mu)^2/\sigma+\mu-1$$
 Still using a single beta here.
 
 
+hashed this out as it doesnt run (saves time)
+
 ```{r}
-## decide testing rate (min,med,max or off)
-testing('min')
-
-## set up run
-stanname='beta_meansd_RL_2.stan'
-
-stanfile <- file.path(scriptdir, stanname)
-
-flare_data<-list(ntrials=ntrials,nsub=nsub,screamPlus = t(screamPlus), screamMinus=t(screamMinus),ratingsPlus=t(plus_scaled),ratingsMinus=t(minus_scaled))
-
-flare_fit <- stan(file = stanfile, data = flare_data, iter=chain_iter, chains = chain_n) #add working dir?
-
-save(flare_fit, file=file.path(datadir,'flare_fit_test'))
-
-traceplot(flare_fit,'lp__')
-
-# extract fit data
-summary_flare<- summary(flare_fit)
-
-# extract model summary data
+# ## decide testing rate (min,med,max or off)
+# testing('min')
+# 
+# ## set up run
+# stanname='beta_meansd_RL_2.stan'
+# 
+# stanfile <- file.path(scriptdir, stanname)
+# 
+# flare_data<-list(ntrials=ntrials,nsub=nsub,screamPlus = t(screamPlus), screamMinus=t(screamMinus),ratingsPlus=t(plus_scaled),ratingsMinus=t(minus_scaled))
+# 
+# flare_fit <- stan(file = stanfile, data = flare_data, iter=chain_iter, chains = chain_n) #add working dir?
+# 
+# save(flare_fit, file=file.path(datadir,'flare_fit_test'))
+# 
+# traceplot(flare_fit,'lp__')
+# 
+# # extract fit data
+# summary_flare<- summary(flare_fit)
+# 
+# # extract model summary data
 
 #flare_loglike<- extract_log_lik(flare_fit, parameter_name = "loglik", merge_chains = TRUE)
 
@@ -1272,7 +1350,7 @@ summary_flare<- summary(flare_fit)
 ```{r}
 ## get some basic output descriptions printed to screen
 
-out_describe(summary_flare)
+# out_describe(summary_flare)
 
 ```
 
@@ -1306,43 +1384,76 @@ Because this works best, will add loglikelihhod calculation here. Basing this on
          
          
          
-
+Hashed this out as it doesnt run (saves time)
 
 ```{r}
 ## decide testing rate (min,med,max or off)
-testing('min')
-
-## set up run
-stanname='beta_meansd_RL_3.stan'
-
-stanfile <- file.path(scriptdir, stanname)
-
-flare_data<-list(ntrials=ntrials,nsub=nsub,screamPlus = t(screamPlus), screamMinus=t(screamMinus),ratingsPlus=t(plus_scaled),ratingsMinus=t(minus_scaled))
-
-flare_fit <- stan(file = stanfile, data = flare_data, iter=chain_iter, chains = chain_n) #add working dir?
-
-save(flare_fit, file=file.path(datadir,'flare_fit_test'))
-
-traceplot(flare_fit,'lp__')
-
-# extract fit data
-summary_flare<- summary(flare_fit)
-
-# extract model summary data
-
-flare_loglike<- extract_log_lik(flare_fit, parameter_name = "loglik", merge_chains = TRUE)
+# testing('min')
+# 
+# ## set up run
+# stanname='beta_meansd_RL_3.stan'
+# 
+# stanfile <- file.path(scriptdir, stanname)
+# 
+# flare_data<-list(ntrials=ntrials,nsub=nsub,screamPlus = t(screamPlus), screamMinus=t(screamMinus),ratingsPlus=t(plus_scaled),ratingsMinus=t(minus_scaled))
+# 
+# flare_fit <- stan(file = stanfile, data = flare_data, iter=chain_iter, chains = chain_n) #add working dir?
+# 
+# save(flare_fit, file=file.path(datadir,'flare_fit_test'))
+# 
+# traceplot(flare_fit,'lp__')
+# 
+# # extract fit data
+# summary_flare<- summary(flare_fit)
+# 
+# # extract model summary data
+# 
+# flare_loglike<- extract_log_lik(flare_fit, parameter_name = "loglik", merge_chains = TRUE)
 
 ```
 
 ```{r}
 ## get some basic output descriptions printed to screen
 
-out_describe(summary_flare)
+# out_describe(summary_flare)
 
 ```
 
 This model is substnatially better than either of the other two. Traceplot suggests that the iterations converge as we would like. However, we still need to massively constrain the beta (i.e. confidence / uncertainty) estimates for it to run, otherwise the starting values drop below zero. 
 
+#### Create BIC from log likelihood
+
+```{r}
+## extract log likelihood
+# 
+# flare_loglike <- extract_log_lik(flare_fit, parameter_name = "loglik", merge_chains = TRUE)
+# 
+# #calculate BIC
+# 
+# FLARe_bic<-bic(ntrials,colMeans(flare_loglike),2) #number of parameters in that model e.g. 4)
+# 
+# ## mean BIC as model comparisons tool:
+# 
+# print("Mean Bayesian information criterion for model")
+# mean(FLARe_bic)
+
+```
+
+
+#### Add to bar plot
+
+```{r}
+# 
+# mod_comp <- rbind(na.omit(mod_comp,c("Mean 1 beta",mean(FLARe_bic))))
+# 
+
+# plot <- ggplot(na.omit(mod_comp),aes(x=model,y=BIC)) +
+#   geom_bar(stat = "identity") +
+#   coord_flip()
+# 
+# show(plot)
+
+```
 
 ### Mean definition 4
 
@@ -1371,26 +1482,60 @@ stanname='beta_meansd_RL_4.stan'
 
 stanfile <- file.path(scriptdir, stanname)
 
-flare_data<-list(ntrials=ntrials,nsub=nsub,screamPlus = t(screamPlus), screamMinus=t(screamMinus),ratingsPlus=t(plus_scaled),ratingsMinus=t(minus_scaled))
+flare_data<-list(ntrials=ntrials,nsub=nsub,screamPlus = t(screamPlus), screamMinus=t(screamMinus),ratingsPlus=t(plus_scaled),ratingsMinus=t(minus_scaled),cdf_scale=cdf_scale)
 
 flare_fit <- stan(file = stanfile, data = flare_data, iter=chain_iter, chains = chain_n) #add working dir?
 
-save(flare_fit, file=file.path(datadir,'flare_fit_test'))
+save(flare_fit, file=file.path(datadir,'flare_fit_simpleMean'))
 
 traceplot(flare_fit,'lp__')
 
 # extract fit data
-summary_flare<- summary(flare_fit)
-
-# extract model summary data
-
-#flare_loglike<- extract_log_lik(flare_fit, parameter_name = "loglik", merge_chains = TRUE)
+summary_flare <- summary(flare_fit)
 
 ```
 
-#### questions
+```{r}
+## get some basic output descriptions printed to screen
 
-* why does the beta RL mean sd not run unless beta is bounded between 0 and 0.0001??
+out_describe(summary_flare)
+
+```
+
+#### Create BIC from log likelihood
+
+```{r}
+## extract log likelihood
+
+flare_loglike <- extract_log_lik(flare_fit, parameter_name = "loglik", merge_chains = TRUE)
+
+#calculate BIC
+
+FLARe_bic<-bic(ntrials,colMeans(flare_loglike),2) #number of parameters in that model e.g. 4)
+
+## mean BIC as model comparisons tool:
+
+print("Mean Bayesian information criterion for model")
+mean(FLARe_bic)
+
+```
+
+
+#### Add to bar plot
+
+```{r}
+
+mod_comp <- rbind(na.omit(mod_comp,c("Mean 1 beta",mean(FLARe_bic))))
+
+
+plot <- ggplot(na.omit(mod_comp),aes(x=model,y=BIC)) +
+  geom_bar(stat = "identity") +
+  coord_flip()
+
+show(plot)
+
+```
+
 
 ## Model 4: RL, mode defined, single beta {.tabset}
 
@@ -1412,36 +1557,36 @@ For this version we try and estimate the 'mode' to be shape 1. KIRSTIN:: explain
 
 ```{r}
 ## decide testing rate (min,med,max or off)
-
-testing('skip')
-
-## set up run
-
-stanname='beta_mode_RL.stan'
-
-stanfile <- file.path(scriptdir, stanname)
-
-flare_data<-list(ntrials=ntrials,nsub=nsub,screamPlus = t(screamPlus), screamMinus=t(screamMinus),ratingsPlus=t(plus_scaled),ratingsMinus=t(minus_scaled))
-
-flare_fit <- stan(file = stanfile, data = flare_data, iter=chain_iter, chains = chain_n) #add working dir?
-
-save(flare_fit, file=file.path(datadir,'flare_fit_test'))
-
-traceplot(flare_fit,'lp__')
-
-# extract fit data
-summary_flare<- summary(flare_fit)
-
-# extract model summary data
-
-#flare_loglike<- extract_log_lik(flare_fit, parameter_name = "loglik", merge_chains = TRUE)
+# 
+# testing('skip')
+# 
+# ## set up run
+# 
+# stanname='beta_mode_RL.stan'
+# 
+# stanfile <- file.path(scriptdir, stanname)
+# 
+# flare_data<-list(ntrials=ntrials,nsub=nsub,screamPlus = t(screamPlus), screamMinus=t(screamMinus),ratingsPlus=t(plus_scaled),ratingsMinus=t(minus_scaled))
+# 
+# flare_fit <- stan(file = stanfile, data = flare_data, iter=chain_iter, chains = chain_n) #add working dir?
+# 
+# save(flare_fit, file=file.path(datadir,'flare_fit_simpleMode'))
+# 
+# traceplot(flare_fit,'lp__')
+# 
+# # extract fit data
+# summary_flare<- summary(flare_fit)
+# 
+# # extract model summary data
+# 
+# #flare_loglike<- extract_log_lik(flare_fit, parameter_name = "loglik", merge_chains = TRUE)
 
 ```
 
 ```{r}
 ## get some basic output descriptions printed to screen
 
-out_describe(summary_flare)
+# out_describe(summary_flare)
 
 ```
 
@@ -1455,14 +1600,14 @@ so you have a ratio of their selected value per trial (mode across iterations?) 
 ```{r}
 
 ## decide testing rate (min,med,max or off)
-testing('med')
+testing('min')
 
 ## set up run
 stanname='beta_mode_RL_2.stan'
 
 stanfile <- file.path(scriptdir, stanname)
 
-flare_data<-list(ntrials=ntrials,nsub=nsub,screamPlus = t(screamPlus), screamMinus=t(screamMinus),ratingsPlus=t(plus_scaled),ratingsMinus=t(minus_scaled))
+flare_data<-list(ntrials=ntrials,nsub=nsub,screamPlus = t(screamPlus), screamMinus=t(screamMinus),ratingsPlus=t(plus_scaled),ratingsMinus=t(minus_scaled),cdf_scale=cdf_scale)
 
 flare_fit <- stan(file = stanfile, data = flare_data, iter=chain_iter, chains = chain_n) #add working dir?
 
@@ -1473,9 +1618,6 @@ traceplot(flare_fit,'lp__')
 # extract fit data
 summary_flare<- summary(flare_fit)
 
-# extract model summary data
-
-#flare_loglike<- extract_log_lik(flare_fit, parameter_name = "loglik", merge_chains = TRUE)
 
 ```
 
@@ -1486,10 +1628,44 @@ out_describe(summary_flare)
 
 ```
 
+
 This works, but there is not a lot of variance in the alpha paramter when described by mode mean 0.49; sd = 0.06. Compared to defined by mean where mean is 0.54 and sd is 0.26.
 
 However there is a lot of variation in the beta paramter (mean -7.21, sd = 134.74)
 
+#### Create BIC from log likelihood
+
+```{r}
+## extract log likelihood
+
+flare_loglike <- extract_log_lik(flare_fit, parameter_name = "loglik", merge_chains = TRUE)
+
+#calculate BIC
+
+FLARe_bic<-bic(ntrials,colMeans(flare_loglike),2) #number of parameters in that model e.g. 4)
+
+## mean BIC as model comparisons tool:
+
+print("Mean Bayesian information criterion for model")
+mean(FLARe_bic)
+
+```
+
+
+#### Add to bar plot
+
+```{r}
+# 
+# mod_comp <- rbind(mod_comp,c("Mode 1 beta",mean(FLARe_bic)))
+# 
+
+# plot <- ggplot(na.omit(mod_comp),aes(x=model,y=BIC)) +
+#   geom_bar(stat = "identity") +
+#   coord_flip()
+# # 
+# show(plot)
+
+```
 ## Model 5: RL mean defined,two beta {.tabset}
 
 ### mean sd RL model with beta per stimulus
@@ -1505,20 +1681,16 @@ stanname='beta_meansd_2beta_RL.stan'
 
 stanfile <- file.path(scriptdir, stanname)
 
-flare_data<-list(ntrials=ntrials,nsub=nsub,screamPlus = t(screamPlus), screamMinus= t(screamMinus),ratingsPlus=t(plus_scaled),ratingsMinus=t(minus_scaled))
+flare_data<-list(ntrials=ntrials,nsub=nsub,screamPlus = t(screamPlus), screamMinus= t(screamMinus),ratingsPlus=t(plus_scaled),ratingsMinus=t(minus_scaled),cdf_scale=cdf_scale)
 
 flare_fit <- stan(file = stanfile, data = flare_data, iter=chain_iter,warmup = warm_up, chains = chain_n) #add working dir?
 
-save(flare_fit, file=file.path(datadir,'flare_fit_test'))
+save(flare_fit, file=file.path(datadir,'flare_fit_2betaMean'))
 
 traceplot(flare_fit,'lp__')
 
 # extract fit data
 summary_flare <- summary(flare_fit)
-
-# extract model summary data
-
-#flare_loglike<- extract_log_lik(flare_fit, parameter_name = "loglik", merge_chains = TRUE)
 
 ```
 
@@ -1529,6 +1701,37 @@ out_describe(summary_flare)
 
 ```
 
+#### Create BIC from log likelihood
+
+```{r}
+## extract log likelihood
+
+flare_loglike <- extract_log_lik(flare_fit, parameter_name = "loglik", merge_chains = TRUE)
+
+#calculate BIC
+
+FLARe_bic <- bic(ntrials,colMeans(flare_loglike),3) #number of parameters in that model e.g. 4)
+
+# mean for all participants
+
+mean(FLARe_bic)
+
+```
+
+
+#### Add to bar plot
+
+```{r}
+
+mod_comp <- rbind(mod_comp,c("Means 2 beta",mean(FLARe_bic)))
+
+plot <- ggplot(na.omit(mod_comp),aes(x=model,y=BIC)) +
+  geom_bar(stat = "identity") +
+  coord_flip()
+
+show(plot)
+
+```
 
 ## Model 6: RL mode defined,two beta {.tabset}
 
@@ -1538,7 +1741,7 @@ RL model adding a beta per stimuli to model defining the beta shape using the mo
 
 ```{r}
 ## decide testing rate (min,med,max or off)
-testing('off')
+testing('min')
 
 ## set up run
 stanname='beta_mode_2beta_RL_2.stan'
@@ -1574,6 +1777,37 @@ out_describe(summary_flare)
 The alpha parameter variance is normal (mean 0.4 and sd 0.12). Beta is much more bounded now though (combined across both stimuli mean 0.79, sd=1.6) over 4000 iterations on 4 chains.
 
 
+#### Create BIC from log likelihood
+
+```{r}
+## extract log likelihood
+
+flare_loglike <- extract_log_lik(flare_fit, parameter_name = "loglik", merge_chains = TRUE)
+
+#calculate BIC
+
+FLARe_bic<-bic(ntrials,colMeans(flare_loglike),2) #number of parameters in that model e.g. 4)
+
+## mean BIC as model comparisons tool:
+
+print("Mean Bayesian information criterion for model")
+mean(FLARe_bic)
+
+```
+
+#### Add to bar plot
+
+```{r}
+
+mod_comp <- rbind(mod_comp,c("Mode 2 beta",mean(FLARe_bic)))
+
+plot <- ggplot(mod_comp,aes(x=model,y=BIC)) +
+  geom_bar(stat = "identity") +
+  coord_flip()
+
+show(plot)
+
+```
 # to do
 
 * get means working.

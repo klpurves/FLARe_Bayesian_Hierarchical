@@ -1,0 +1,1 @@
+bic<-function(trials,neg_log_like,nparam) 2*neg_log_like+nparam*log(trials) #canonical

@@ -52,21 +52,22 @@ model {
     }
   }
 }
-
 // below is what will generate the log likelihoods.
 
 generated quantities { //does the same calculations again for the fitted values
   real loglik[nsub];  // logliklihood paramter
-  real <lower = 0>shape1_Plus[ntrials,nsub]; //shape parameter 1 CS+
-  real <lower = 0>shape1_Minus[ntrials,nsub]; // shape parameter 1 CS-
-  real <lower = 0>shape2_Plus[ntrials,nsub]; // shape paramter 2 CS+
-  real <lower = 0>shape2_Minus[ntrials,nsub]; // shape paramter 2 CS-
+  real shape1_Plus[ntrials,nsub]; //shape parameter 1 CS+
+  real shape1_Minus[ntrials,nsub]; // shape parameter 1 CS-
+  real shape2_Plus[ntrials,nsub]; // shape paramter 2 CS+
+  real shape2_Minus[ntrials,nsub]; // shape paramter 2 CS-
 
 
   real VPlus[ntrials,nsub]; // value CS+
   real VMinus[ntrials,nsub]; // value CS-
   real deltaPlus[ntrials-1,nsub]; // prediction error for  CS+
   real deltaMinus[ntrials-1,nsub];    // prediction error for CS-
+
+
 
 
   for (p in 1:nsub){
@@ -84,11 +85,14 @@ generated quantities { //does the same calculations again for the fitted values
       shape1_Minus[t,p] = ((1-VMinus[t,p])/beta[p] - 1/VMinus[t,p])*(VMinus[t,p])^2;
       shape2_Plus[t,p] = ((1-VPlus[t,p])/beta[p] - 1/VPlus[t,p])*(1/VPlus[t,p]-1);
       shape2_Minus[t,p] = ((1-VMinus[t,p])/beta[p] - 1/VMinus[t,p])*(1/VMinus[t,p]-1);
+      
+    //  print(beta_lpdf(ratingsPlus[t,p] | shape1_Plus[t,p],shape2_Plus[t,p]))
 
       // increments the log likelihood trial by trial using the log choice prob and parameters estimated in the model block
-      loglik[p] +=
-         beta_lpdf(ratingsPlus[t,p]|shape1_Plus[t,p],shape2_Plus[t,p]) +
-         beta_lpdf(ratingsMinus[t,p]|shape1_Minus[t,p],shape2_Minus[t,p]);
+      loglik[p] += beta_lcdf((ratingsPlus[t,p] + cdf_scale) | shape1_Plus[t,p],shape2_Plus[t,p]) +
+      beta_lcdf((ratingsPlus[t,p] - cdf_scale) | shape1_Plus[t,p],shape2_Plus[t,p]) +
+      beta_lcdf((ratingsMinus[t,p] + cdf_scale) | shape1_Minus[t,p],shape2_Minus[t,p]) +
+      beta_lcdf((ratingsMinus[t,p] - cdf_scale) | shape1_Minus[t,p],shape2_Minus[t,p]);
     }
   }
 }
