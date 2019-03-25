@@ -72,8 +72,6 @@ generated quantities { //does the same calculations again for the fitted values
   real deltaMinus[ntrials-1,nsub];    // prediction error for CS-
 
 
-
-
   for (p in 1:nsub){
     loglik[p]=0;
     VPlus[1,p]=0.5;
@@ -94,10 +92,10 @@ generated quantities { //does the same calculations again for the fitted values
     //  print(beta_lpdf(ratingsPlus[t,p] | shape1_Plus[t,p],shape2_Plus[t,p]))
 
       // increments the log likelihood trial by trial using the log choice prob and parameters estimated in the model block
-      loglik[p] += beta_lcdf((ratingsPlus[t,p] + cdf_scale) | shape1_Plus[t,p],shape2_Plus[t,p]) +
-      beta_lcdf((ratingsPlus[t,p] - cdf_scale) | shape1_Plus[t,p],shape2_Plus[t,p]) +
-      beta_lcdf((ratingsMinus[t,p] + cdf_scale) | shape1_Minus[t,p],shape2_Minus[t,p]) +
-      beta_lcdf((ratingsMinus[t,p] - cdf_scale) | shape1_Minus[t,p],shape2_Minus[t,p]);
+      loglik[p] += log(beta_cdf((ratingsPlus[t,p] + cdf_scale) , shape1_Plus[t,p],shape2_Plus[t,p]) -
+      beta_cdf((ratingsPlus[t,p] - cdf_scale) , shape1_Plus[t,p],shape2_Plus[t,p])) +
+      log(beta_cdf((ratingsMinus[t,p] + cdf_scale) , shape1_Minus[t,p],shape2_Minus[t,p]) -
+      beta_cdf((ratingsMinus[t,p] - cdf_scale) , shape1_Minus[t,p],shape2_Minus[t,p]));
     }
   }
 }
