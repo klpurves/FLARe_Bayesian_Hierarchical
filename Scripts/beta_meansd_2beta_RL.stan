@@ -46,11 +46,14 @@ model {
       shape2_Plus[t,p] = (1-VPlus[t,p]) * ((VPlus[t,p] * (1-VPlus[t,p])) / beta[p,1]);
       shape2_Minus[t,p] = (1-VMinus[t,p]) * ((VMinus[t,p] * (1-VMinus[t,p])) / beta[p,2]);
 
+
+
       ratingsPlus[t,p] ~ beta(shape1_Plus[t,p],shape2_Plus[t,p]);
       ratingsMinus[t,p] ~ beta(shape1_Minus[t,p],shape2_Minus[t,p]);
     }
   }
 }
+
 
 
 // below is what will generate the log likelihoods.
@@ -73,6 +76,8 @@ generated quantities { //does the same calculations again for the fitted values
 
   for (p in 1:nsub){
     loglik[p]=0;
+
+  {
     VPlus[1,p]=0.5;
     VMinus[1,p]=0.5;
     for (t in 1:(ntrials-1)){
@@ -93,6 +98,7 @@ generated quantities { //does the same calculations again for the fitted values
       beta_cdf((ratingsPlus[t,p] - cdf_scale) , shape1_Plus[t,p],shape2_Plus[t,p])) +
       log(beta_cdf((ratingsMinus[t,p] + cdf_scale) , shape1_Minus[t,p],shape2_Minus[t,p]) -
       beta_cdf((ratingsMinus[t,p] - cdf_scale) , shape1_Minus[t,p],shape2_Minus[t,p]));
+      }
     }
   }
 }
