@@ -24,15 +24,18 @@ model {
   real shape2_Minus[ntrials,nsub]; // shape paramter 2 CS-
 
 
-  real VPlus[ntrials,nsub]; // value CS+
-  real VMinus[ntrials,nsub]; // value CS-
+  matrix[ntrials,nsub] VPlus; // value CS+
+  matrix[ntrials,nsub] VMinus; // value CS-
+
   real deltaPlus[ntrials-1,nsub]; // prediction error for  CS+
   real deltaMinus[ntrials-1,nsub];    // prediction error for CS-
 
+  vector<lower=0.5-cdf_scale,upper=0.5+cdf_scale>[nsub] first;
+
 
   for (p in 1:nsub){
-    VPlus[1,p]=0.5;
-    VMinus[1,p]=0.5;
+    VPlus[1,p]=first[p]; // assume that the mid point varies like our ratings. so a range between 0.5-0.0555556 and 0.5+0.0000056
+    VMinus[1,p]=first[p];
     for (t in 1:(ntrials-1)){
       deltaPlus[t,p] = screamPlus[t,p]-VPlus[t,p]; // prediction error calc CS+
       deltaMinus[t,p] = screamMinus[t,p]-VMinus[t,p]; // ditto CS-
@@ -66,20 +69,21 @@ generated quantities { //does the same calculations again for the fitted values
   real shape2_Minus[ntrials,nsub]; // shape paramter 2 CS-
 
 
-  real VPlus[ntrials,nsub]; // value CS+
-  real VMinus[ntrials,nsub]; // value CS-
+  matrix[ntrials,nsub] VPlus; // value CS+
+  matrix[ntrials,nsub] VMinus; // value CS-
+
   real deltaPlus[ntrials-1,nsub]; // prediction error for  CS+
   real deltaMinus[ntrials-1,nsub];    // prediction error for CS-
 
-
+  vector<lower=0.5-cdf_scale,upper=0.5+cdf_scale>[nsub] first;
 
 
   for (p in 1:nsub){
     loglik[p]=0;
 
   {
-    VPlus[1,p]=0.5;
-    VMinus[1,p]=0.5;
+    VPlus[1,p]=first[p]; // assume that the mid point varies like our ratings. so a range between 0.5-0.0555556 and 0.5+0.0000056
+    VMinus[1,p]=first[p];
     for (t in 1:(ntrials-1)){
       deltaPlus[t,p] = screamPlus[t,p]-VPlus[t,p]; // prediction error calc CS+
       deltaMinus[t,p] = screamMinus[t,p]-VMinus[t,p]; // ditto CS-

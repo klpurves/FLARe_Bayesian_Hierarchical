@@ -358,9 +358,12 @@ while (count < (dim(summary$summary)[1]-1)){
 # create the n trials variable for RStan
 ntrials=12
 
-## canonical BIC function
+## canonical BIC function (Alex Pikes)
 
-bic<-function(trials,neg_log_like,nparam) 2*neg_log_like+nparam*log(trials) #canonical
+bic<-function(trials,neg_log_like,nparam) {
+  if (sum(neg_log_like<0)>0){print('check this is negative log likelihood!!')} 
+  2*neg_log_like+nparam*log(trials) #canonical
+}
 
 ```
 
@@ -1087,6 +1090,8 @@ mod_comp <- data.frame(model=NA,BIC=NA)
 
 ```
 
+# Baseline models
+
 ## Model 1: single beta no scaling {.tabset}
 
 ### notes
@@ -1484,21 +1489,21 @@ stanfile <- file.path(scriptdir, stanname)
 
 flare_data<-list(ntrials=ntrials,nsub=nsub,screamPlus = t(screamPlus), screamMinus=t(screamMinus),ratingsPlus=t(plus_scaled),ratingsMinus=t(minus_scaled),cdf_scale=cdf_scale)
 
-flare_fit <- stan(file = stanfile, data = flare_data, iter=chain_iter, chains = chain_n) #add working dir?
+flare_fit_best <- stan(file = stanfile, data = flare_data, iter=chain_iter, chains = chain_n) #add working dir?
 
-save(flare_fit, file=file.path(datadir,'flare_fit_simpleMean'))
+save(flare_fit_best, file=file.path(datadir,'flare_fit_simpleMean'))
 
-traceplot(flare_fit,'lp__')
+traceplot(flare_fit_best,'lp__')
 
 # extract fit data
-summary_flare <- summary(flare_fit)
+summary_flare_best <- summary(flare_fit_best)
 
 ```
 
 ```{r}
 ## get some basic output descriptions printed to screen
 
-out_describe(summary_flare)
+out_describe(summary_flare_best)
 
 ```
 
@@ -1507,11 +1512,11 @@ out_describe(summary_flare)
 ```{r}
 ## extract log likelihood
 
-flare_loglike <- extract_log_lik(flare_fit, parameter_name = "loglik", merge_chains = TRUE)
+flare_loglike_best <- extract_log_lik(flare_fit_best, parameter_name = "loglik", merge_chains = TRUE)
 
 #calculate BIC
 
-FLARe_bic<-bic(ntrials,-colMeans(flare_loglike),2) #number of parameters in that model e.g. 4)
+FLARe_bic<-bic(ntrials,-colMeans(flare_loglike_best),2) #number of parameters in that model e.g. 4)
 
 ## mean BIC as model comparisons tool:
 
@@ -1638,16 +1643,16 @@ However there is a lot of variation in the beta paramter (mean -7.21, sd = 134.7
 ```{r}
 ## extract log likelihood
 
-flare_loglike <- extract_log_lik(flare_fit, parameter_name = "loglik", merge_chains = TRUE)
+flare_loglike_best <- extract_log_lik(flare_fit_best, parameter_name = "loglik", merge_chains = TRUE)
 
 #calculate BIC
 
-FLARe_bic<-bic(ntrials,-colMeans(flare_loglike),2) #number of parameters in that model e.g. 4)
+FLARe_bic_best<-bic(ntrials,-colMeans(flare_loglike_best),2) #number of parameters in that model e.g. 4)
 
 ## mean BIC as model comparisons tool:
 
 print("Mean Bayesian information criterion for model")
-mean(FLARe_bic)
+mean(FLARe_bic_best)
 
 ```
 
@@ -1683,21 +1688,21 @@ stanfile <- file.path(scriptdir, stanname)
 
 flare_data<-list(ntrials=ntrials,nsub=nsub,screamPlus = t(screamPlus), screamMinus= t(screamMinus),ratingsPlus=t(plus_scaled),ratingsMinus=t(minus_scaled),cdf_scale=cdf_scale)
 
-flare_fit_best <- stan(file = stanfile, data = flare_data, iter=chain_iter,warmup = warm_up, chains = chain_n) #add working dir?
+flare_fit_m2 <- stan(file = stanfile, data = flare_data, iter=chain_iter,warmup = warm_up, chains = chain_n) #add working dir?
 
-save(flare_fit_best, file=file.path(datadir,'flare_fit_2betaMean'))
+save(flare_fit_m2, file=file.path(datadir,'flare_fit_2betaMean'))
 
-traceplot(flare_fit_best,'lp__')
+traceplot(flare_fit_m2,'lp__')
 
 # extract fit data
-summary_flare <- summary(flare_fit_best)
+summary_flare_m2 <- summary(flare_fit_m2)
 
 ```
 
 ```{r}
 ## get some basic output descriptions printed to screen
 
-out_describe(summary_flare)
+out_describe(summary_flare_m2)
 
 ```
 
@@ -1706,15 +1711,15 @@ out_describe(summary_flare)
 ```{r}
 ## extract log likelihood
 
-flare_loglike <- extract_log_lik(flare_fit_best, parameter_name = "loglik", merge_chains = TRUE)
+flare_loglike_m2 <- extract_log_lik(flare_fit_m2, parameter_name = "loglik", merge_chains = TRUE)
 
 #calculate BIC
 
-FLARe_bic <- bic(ntrials,-colMeans(flare_loglike),3) #number of parameters in that model e.g. 4)
+FLARe_bic_m2 <- bic(ntrials,-colMeans(flare_loglike_m2),3) #number of parameters in that model e.g. 4)
 
 # mean for all participants
 
-mean(FLARe_bic)
+mean(FLARe_bic_m2)
 
 ```
 
@@ -1809,6 +1814,83 @@ show(plot)
 
 ```
 
+## Model 7: RL mean defined, no beta {.tabset}
+
+### mean sd RL model with no beta (only alpha)
+
+The beta doesnt work as well for the CS+ stimulus, need to check if this paramter adds anything to the model - drop it from our best mean model and see how this changes the fit.
+
+```{r}
+
+## decide testing rate (min,med,max or off)
+testing('min')
+
+## set up run
+stanname='beta_meansd_RL_NoBeta.stan'
+
+stanfile <- file.path(scriptdir, stanname)
+
+flare_data<-list(ntrials=ntrials,nsub=nsub,screamPlus = t(screamPlus), screamMinus= t(screamMinus),ratingsPlus=t(plus_scaled),ratingsMinus=t(minus_scaled))
+
+flare_fit <- stan(file = stanfile, data = flare_data, iter=chain_iter, chains = chain_n) #add working dir?
+
+save(flare_fit, file=file.path(datadir,'flare_fit_test'))
+
+traceplot(flare_fit,'lp__')
+
+# extract fit data
+summary_flare <- summary(flare_fit)
+
+# extract model summary data
+
+#flare_loglike<- extract_log_lik(flare_fit, parameter_name = "loglik", merge_chains = TRUE)
+
+
+```
+
+```{r}
+## get some basic output descriptions printed to screen
+
+out_describe(summary_flare)
+
+```
+
+
+The alpha parameter variance is normal (mean 0.4 and sd 0.12). Beta is much more bounded now though (combined across both stimuli mean 0.79, sd=1.6) over 4000 iterations on 4 chains.
+
+
+#### Create BIC from log likelihood
+
+```{r}
+## extract log likelihood
+
+flare_loglike <- extract_log_lik(flare_fit, parameter_name = "loglik", merge_chains = TRUE)
+
+#calculate BIC
+
+FLARe_bic<-bic(ntrials,-colMeans(flare_loglike),2) #number of parameters in that model e.g. 4)
+
+## mean BIC as model comparisons tool:
+
+print("Mean Bayesian information criterion for model")
+mean(FLARe_bic)
+
+```
+
+#### Add to bar plot
+
+```{r}
+
+mod_comp <- rbind(na.omit(mod_comp),c("Mean no beta",mean(FLARe_bic)))
+
+plot <- ggplot(mod_comp,aes(x=model,y=BIC)) +
+  geom_bar(stat = "identity") +
+  coord_flip()
+
+show(plot)
+
+```
+
 # Generate and recover 
 
 Here I test whether the model is working well by seeing if I can use the parameters we've estimated to try and generate our existing rating data and then recover similar paramters again.
@@ -1819,9 +1901,12 @@ A good model will have **a)** a good correlation between real data and the data 
 
 We basically want to replicate our stan script, but inatead of estimating paratmers, we want to assume that we know what the parameters are (i.e. use the alpha and beta's we have estimated previously).
 
+**update**: turns out single beta is the best fitting model when I correct my BIC function to include the negative log likelihood. So will also generate and recover for this model and use this as the comparator.
 
-## Generate 
-#### Make alpha / beta datasets p/p
+
+## Mean 1 beta
+### Generate 
+##### Make alpha / beta datasets p/p
 
 Use the summary of the stan model to extract the different paramters we want to try to use to recreate our data.
 
@@ -1829,30 +1914,14 @@ Use the summary of the stan model to extract the different paramters we want to 
 
 params <- summary(flare_fit_best)
 alpha_est <- data.frame(params$summary[1:342,1])
-beta_plus <- data.frame(matrix(ncol = 1,nrow=342))
-beta_minus <- data.frame(matrix(ncol = 1,nrow=342))
+beta <- data.frame(params$summary[343:685])
 
-names(beta_plus) <- "beta_plus"
-names(beta_minus) <- "beta_minus"
-  
-subp = 0
-subm = 0
-  for ( i in 343:1026){
-    
-    if (i%%2 == 1){
-      subp= subp+1
-      beta_plus[subp,1] <- params$summary[i,1]
-    } else if (i%%2 == 0) {
-      subm= subm+1
-      beta_minus[subm,1] <- params$summary[i,1] 
-    }
-    
-}
 
+names(beta) <- "beta"
 
 ```
 
-#### Initialise empty datasets to hold the predicted ratings
+##### Initialise empty datasets to hold the predicted ratings
 
 ```{r}
 
@@ -1880,12 +1949,12 @@ dm <- data.frame(matrix(ncol=(ntrials-1),nrow=nsub))
   
 ```
 
-#### Simulate ratings
+##### Simulate ratings
 
 Use our extracted paramters in place of estimating the same. Use the stan syntax
 
 
-#####  Populate our vplus and delta frames
+######  Populate our vplus and delta frames
 
 use the alpha paramters we've extracted (alpha_est)
 d == delta (precdiction error)
@@ -1918,7 +1987,308 @@ for (p in 1:nsub){
 }
 
 
-##### populate beta paramter shape frames
+###### populate beta parameter shape frames
+
+Use the new v frames and beta parameters.
+
+Shape 1 and 2 are sufficient paramters for the beta distribution
+
+```{r}
+
+for (p in 1:nsub){
+  
+  for (t in 1:ntrials){
+    
+      shape1p[p,t] = vp[p,t] * ((vp[p,t] * (1-vp[p,t])) / beta[p,1])
+      shape1m[p,t] = vm[p,t] * ((vm[p,t] * (1-vm[p,t])) / beta[p,1])
+      shape2p[p,t] = (1-vp[p,t]) * ((vp[p,t] * (1-vp[p,t])) / beta[p,1])
+      shape2m[p,t] = (1-vm[p,t]) * ((vm[p,t] * (1-vm[p,t])) / beta[p,1])
+      
+  }
+}
+  
+
+```
+
+
+###### Estimate ratings
+
+
+trying to use pbeta here (derives the distribution function givemn a set of probabilities) 
+
+For now, setting probabilities between 0 and 1 and taking the average...
+```{r}
+
+
+for (p in 1:nsub){
+  
+  for (t in 1:ntrials){
+    
+    rating_est_plus[p,t] <- mean(rbeta(1000,shape1p[p,t],shape2p[p,t]))
+    rating_est_minus[p,t] <- mean(rbeta(1000,shape1m[p,t],shape2m[p,t]))
+    
+  }
+}
+
+
+```
+
+#### Rescale simulated ratings
+
+You could argue that these should match the discrete scale nature of the original ratings. We effectively undid this in our script. The following will enable this.
+
+HOWEVER: we are redcucing variance massively this way, so think it might be better to leave the recovered ratings unscales....
+
+So - the following discrete values exist in our rescaled ratings:
+```{r}
+
+table(plus_scaled$X1)
+
+```
+
+Will make it that anything that falls 0.05555556 above or below one of these values is set to this median point. Note that this is our cdf_scale factor that we used in the script to capture the full area under the curve for each segment of the distribution represented by the discrete ratings of 1-9.
+
+Write the function to rescale
+
+```{r}
+
+
+scale_simulated <- function(x){
+  
+  scaled_list <- array(unique(plus_scaled$X1))
+  
+  for (val in scaled_list[1:length(scaled_list)]){
+    if (x > val-cdf_scale & x < val+cdf_scale){
+      
+      x <- val
+    }
+  }
+  return(x)
+}
+
+```
+
+apply it to the simulated rating frames.
+
+(unhash to run this)
+
+```{r}
+## initialise dataframes
+# 
+# est_plus_scaled <- data.frame(matrix(ncol=dim(rating_est_plus)[2],nrow = dim(rating_est_plus)[1]))
+# est_minus_scaled <- data.frame(matrix(ncol=dim(rating_est_minus)[2],nrow = dim(rating_est_minus)[1]))
+# 
+# ##  populate with rescaled values
+# 
+# for (sub in 1:dim(rating_est_plus)[1]){
+#   for (col in 1:dim(rating_est_plus)[2]){
+#     
+#     est_plus_scaled[sub,col] <- scale_simulated(rating_est_plus[sub,col])
+#   }
+# }
+# 
+# for (sub in 1:dim(rating_est_minus)[1]){
+#   for (col in 1:dim(rating_est_minus)[2]){
+#     
+#     est_minus_scaled[sub,col] <- scale_simulated(rating_est_minus[sub,col])
+#   }
+# }
+
+
+```
+
+#### Correlate actual ratings with simulated ratings
+
+use the simulated ratings per person that we have derived using our paramters and see how well they align with the real ratings...
+
+Only showing the diaganols from corr.test package here to get the important t1 x t1 etc values.
+
+this will be using either rating_est files (rating_est_plus;rating_est_minus) or the est_scaled files (est_minus_scaled; est_plus_scaled) depending on whether we opt to return scaling or no 
+
+```{r}
+
+print("real ratings with estimated ratings: CS MINUS")
+diag(corr.test(rating_est_minus,minus_scaled)$r)
+
+print("real ratings with estimated ratings: CS MINUS (average for all trials)")
+cor(rowMeans(rating_est_minus),rowMeans(minus_scaled))
+
+
+print("real ratings with estimated ratings: CS PLUS")
+diag(corr.test(rating_est_plus,plus_scaled)$r)
+
+print("real ratings with estimated ratings: CS PLUS (average for all trials)")
+cor(rowMeans(rating_est_plus),rowMeans(plus_scaled))
+
+```
+
+### Recover
+
+Here we are seeing if we can recover the same estimates using the simulated ratings. Basically run stan but using the estimated ratings instead of the real ones. See if we get the same alpha / beta paramters.
+
+We might decide to use the rescaled estimates here to be more comparable...
+
+#### run stan model
+
+RL model adding a beta per stimulus to Alex's model
+
+```{r}
+## decide testing rate (min,med,max or off)
+testing('min')
+
+## set up run
+stanname='beta_meansd_RL_4.stan'
+
+stanfile <- file.path(scriptdir, stanname)
+
+flare_data<-list(ntrials=ntrials,nsub=nsub,screamPlus = t(screamPlus), screamMinus= t(screamMinus),ratingsPlus=t(rating_est_plus),ratingsMinus=t(rating_est_minus),cdf_scale=cdf_scale)
+
+flare_fit_rec <- stan(file = stanfile, data = flare_data, iter=chain_iter,warmup = warm_up, chains = chain_n) #add working dir?
+
+save(flare_fit_rec, file=file.path(datadir,'flare_fit_2betaMean'))
+
+traceplot(flare_fit_best,'lp__')
+
+# extract fit data
+summary_flare <- summary(flare_fit_rec)
+
+```
+
+#### Make alpha / beta datasets p/p
+
+Use the summary of the stan model to extract the different paramters we want to try to use to recreate our data.
+
+```{r}
+
+params_rec <- summary(flare_fit_rec)
+alpha_est_rec <- data.frame(params_rec$summary[1:342,1])
+beta_rec <- data.frame(params_rec$summary[343:685])
+
+names(beta_rec) <- "beta_rec"
+
+
+
+```
+
+#### Correlate actual ratings with simulated ratings
+
+use the simulated ratings per person that we have derived using our paramters and see how well they align with the real ratings...
+
+Only showing the diaganols from corr.test package here to get the important t1 x t1 etc values.
+
+```{r}
+
+print("original with recovered: ALPHA")
+diag(corr.test(alpha_est_rec,alpha_est)$r)
+
+print("original with recovered: BETA")
+diag(corr.test(beta_rec,beta)$r)
+
+
+
+```
+
+
+## Mean 2 beta
+### Generate 
+##### Make alpha / beta datasets p/p
+
+Use the summary of the stan model to extract the different paramters we want to try to use to recreate our data.
+
+```{r}
+
+params <- summary(flare_fit_m2)
+alpha_est <- data.frame(params$summary[1:342,1])
+beta_plus <- data.frame(matrix(ncol = 1,nrow=342))
+beta_minus <- data.frame(matrix(ncol = 1,nrow=342))
+
+names(beta_plus) <- "beta_plus"
+names(beta_minus) <- "beta_minus"
+  
+subp = 0
+subm = 0
+  for ( i in 343:1026){
+    
+    if (i%%2 == 1){
+      subp= subp+1
+      beta_plus[subp,1] <- params$summary[i,1]
+    } else if (i%%2 == 0) {
+      subm= subm+1
+      beta_minus[subm,1] <- params$summary[i,1] 
+    }
+    
+}
+
+
+```
+
+##### Initialise empty datasets to hold the predicted ratings
+
+```{r}
+
+rating_est_plus <- data.frame(matrix(ncol=ntrials,nrow=nsub))
+rating_est_minus <- data.frame(matrix(ncol=ntrials,nrow=nsub))
+
+# beta shape paramters
+shape1p <- data.frame(matrix(ncol=ntrials,nrow=nsub))
+shape1m <- data.frame(matrix(ncol=ntrials,nrow=nsub))
+shape2p <- data.frame(matrix(ncol=ntrials,nrow=nsub))
+shape2m <- data.frame(matrix(ncol=ntrials,nrow=nsub))
+
+# V parameters (initialised at 0.5)
+vp <- data.frame(matrix(ncol=ntrials,nrow=nsub))
+vm <- data.frame(matrix(ncol=ntrials,nrow=nsub))
+
+vp[1] <- 0.5
+vm[1] <- 0.5
+
+# prediction error 
+
+dp <- data.frame(matrix(ncol=(ntrials-1),nrow=nsub)) 
+dm <- data.frame(matrix(ncol=(ntrials-1),nrow=nsub)) 
+
+  
+```
+
+##### Simulate ratings
+
+Use our extracted paramters in place of estimating the same. Use the stan syntax
+
+
+######  Populate our vplus and delta frames
+
+use the alpha paramters we've extracted (alpha_est)
+d == delta (precdiction error)
+v == value (i.e. value for each stimulus)
+
+
+```{r}
+
+for (p in 1:nsub){
+  for (t in 1:(ntrials-1)){
+      dp[p,t] <- screamPlus[p,t]-vp[p,t]
+      dm[p,t] <- screamMinus[p,t]-vm[p,t]
+      vp[p,t+1] <- vp[p,t]+alpha_est[p,1]*dp[p,t]
+      vm[p,t+1]<- vm[p,t]+alpha_est[p,1]*dp[p,t]
+    }
+}
+
+```
+
+    for (t in 1:ntrials){
+      shape1_Plus[t,p] = VPlus[t,p] * ((VPlus[t,p] * (1-VPlus[t,p])) / beta[p,1]);
+      shape1_Minus[t,p] = VMinus[t,p] * ((VMinus[t,p] * (1-VMinus[t,p])) / beta[p,2]);
+      shape2_Plus[t,p] = (1-VPlus[t,p]) * ((VPlus[t,p] * (1-VPlus[t,p])) / beta[p,1]);
+      shape2_Minus[t,p] = (1-VMinus[t,p]) * ((VMinus[t,p] * (1-VMinus[t,p])) / beta[p,2]);
+
+      ratingsPlus[t,p] ~ beta(shape1_Plus[t,p],shape2_Plus[t,p]);
+      ratingsMinus[t,p] ~ beta(shape1_Minus[t,p],shape2_Minus[t,p]);
+    }
+  }
+}
+
+
+###### populate beta paramter shape frames
 
 Use the new v frames and beta parameters.
 
@@ -1942,7 +2312,7 @@ for (p in 1:nsub){
 ```
 
 
-##### Estimate ratings
+###### Estimate ratings
 
 
 trying to use pbeta here (derives the distribution function givemn a set of probabilities) 
@@ -1964,7 +2334,7 @@ for (p in 1:nsub){
 
 ```
 
-### Correlate actual ratings with simulated ratings
+#### Correlate actual ratings with simulated ratings
 
 use the simulated ratings per person that we have derived using our paramters and see how well they align with the real ratings...
 
@@ -1973,19 +2343,26 @@ Only showing the diaganols from corr.test package here to get the important t1 x
 ```{r}
 
 print("real ratings with estimated ratings: CS MINUS")
-diag(corr.test(rating_est_minus,minus_scaled)$r)
+diag(corr.test(rowMeans(rating_est_minus),rowMeans(minus_scaled))$r)
+
+print("real ratings with estimated ratings: CS MINUS (average for all trials)")
+cor(rowMeans(rating_est_minus),rowMeans(minus_scaled))
+
 
 print("real ratings with estimated ratings: CS PLUS")
 diag(corr.test(rating_est_plus,plus_scaled)$r)
 
+print("real ratings with estimated ratings: CS PLUS (average for all trials)")
+cor(rowMeans(rating_est_plus),rowMeans(plus_scaled))
+
 
 ```
 
-## Recover
+### Recover
 
 Here we are seeing if we can recover the same estimates using the simulated ratings. Basically run stan but using the estimated ratings instead of the real ones. See if we get the same alpha / beta paramters.
 
-### rescale the estimated ratings
+#### rescale the estimated ratings
 
 
 rescale the 1-9 expectancy values to be on a 0-1 scale.
@@ -2024,7 +2401,7 @@ for (sub in 1:dim(rating_est_plus)[1]){
 
 ```
 
-### run stan model
+#### run stan model
 
 
 RL model adding a beta per stimulus to Alex's model
@@ -2051,7 +2428,7 @@ summary_flare <- summary(flare_fit_rec)
 
 ```
 
-### Make alpha / beta datasets p/p
+#### Make alpha / beta datasets p/p
 
 Use the summary of the stan model to extract the different paramters we want to try to use to recreate our data.
 
@@ -2082,7 +2459,7 @@ subm = 0
 
 ```
 
-### Correlate actual ratings with simulated ratings
+#### Correlate actual ratings with simulated ratings
 
 use the simulated ratings per person that we have derived using our paramters and see how well they align with the real ratings...
 
@@ -2101,6 +2478,8 @@ diag(corr.test(beta_minus_rec,beta_minus)$r)
 
 ```
 
+
+# Expanding on the best base model
 
 
 # Potentially interesting paramters to add to best fit model
@@ -2124,12 +2503,12 @@ where $$\lambda = sensitivity\\to\\screams$$
 ```{stan output.var=F}
 // remembering to add this to the paramters block:
 
-real lambda[nsub]
+<!-- real lambda[nsub] -->
 
-// and this to the model block.
+<!-- // and this to the model block. -->
 
-deltaPlus[t,p] = screamPlus[t,p]*lambda[p]-VPlus[t,p]; 
-deltaMinus[t,p] = screamMinus[t,p]*lambda[p]-VMinus[t,p];
+<!-- deltaPlus[t,p] = screamPlus[t,p]*lambda[p]-VPlus[t,p];  -->
+<!-- deltaMinus[t,p] = screamMinus[t,p]*lambda[p]-VMinus[t,p]; -->
 
 ```
 
@@ -2151,8 +2530,8 @@ Where logit sensitivity effectively means consistency of rating consistency; hig
 
 ```{stan output.var=F}
 
-shape1_Plus[t,p] = (1+ exp(-mu*VPlus[t,p] * ((VPlus[t,p] * (1-VPlus[t,p])) / beta[p,1])));
-shape2_Plus[t,p] = (1+ exp(-mu*(1-VPlus[t,p]) * ((VPlus[t,p] * (1-VPlus[t,p])) / beta[p,1]);
+<!-- shape1_Plus[t,p] = (1+ exp(-mu*VPlus[t,p] * ((VPlus[t,p] * (1-VPlus[t,p])) / beta[p,1]))); -->
+<!-- shape2_Plus[t,p] = (1+ exp(-mu*(1-VPlus[t,p]) * ((VPlus[t,p] * (1-VPlus[t,p])) / beta[p,1]); -->
 
 ```
 
