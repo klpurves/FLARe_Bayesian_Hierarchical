@@ -13,6 +13,7 @@ data {
 
 parameters {
   real <lower=0,upper=1>alpha[nsub]; //learning rate
+  vector<lower=0.5-cdf_scale,upper=0.5+cdf_scale>[nsub] first;
 
   }
 
@@ -26,8 +27,6 @@ model {
   matrix[ntrials,nsub] VMinus; // value CS-
   real deltaPlus[ntrials-1,nsub]; // prediction error for  CS+
   real deltaMinus[ntrials-1,nsub];    // prediction error for CS-
-
-  vector<lower=0.5-cdf_scale,upper=0.5+cdf_scale>[nsub] first;
 
 
   for (p in 1:nsub){
@@ -77,8 +76,6 @@ generated quantities { //does the same calculations again for the fitted values
   matrix[ntrials,nsub] VMinus; // value CS-
   real deltaPlus[ntrials-1,nsub]; // prediction error for  CS+
   real deltaMinus[ntrials-1,nsub];    // prediction error for CS-
-
-  vector<lower=0.5-cdf_scale,upper=0.5+cdf_scale>[nsub] first;
 
 
   for (p in 1:nsub){

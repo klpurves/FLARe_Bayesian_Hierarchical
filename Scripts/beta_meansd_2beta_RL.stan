@@ -14,6 +14,7 @@ parameters {
                                           //Basically how confident they are when rating
                                           // related to uncertainty possibly?
                                           // to add 2, beta[nsub,2] and where used [p,1] or [p,2] by shape
+  vector<lower=0.5-cdf_scale,upper=0.5+cdf_scale>[nsub] first;
 }
 
 
@@ -29,9 +30,6 @@ model {
 
   real deltaPlus[ntrials-1,nsub]; // prediction error for  CS+
   real deltaMinus[ntrials-1,nsub];    // prediction error for CS-
-
-  vector<lower=0.5-cdf_scale,upper=0.5+cdf_scale>[nsub] first;
-
 
   for (p in 1:nsub){
     VPlus[1,p]=first[p]; // assume that the mid point varies like our ratings. so a range between 0.5-0.0555556 and 0.5+0.0000056
@@ -74,9 +72,6 @@ generated quantities { //does the same calculations again for the fitted values
 
   real deltaPlus[ntrials-1,nsub]; // prediction error for  CS+
   real deltaMinus[ntrials-1,nsub];    // prediction error for CS-
-
-  vector<lower=0.5-cdf_scale,upper=0.5+cdf_scale>[nsub] first;
-
 
   for (p in 1:nsub){
     loglik[p]=0;

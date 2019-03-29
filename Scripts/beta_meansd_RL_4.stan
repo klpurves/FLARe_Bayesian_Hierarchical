@@ -16,7 +16,8 @@ parameters {
   real <lower=0> beta[nsub]; //calculate distribution variance.
                                           //Basically how confident they are when rating
                                           // related to uncertainty possibly?
-                                          // to add 2, beta[nsub,2] and where used [p,1] or [p,2] by shape
+                                        // to add 2, beta[nsub,2] and where used [p,1] or [p,2] by shape
+  vector<lower=0.5-cdf_scale,upper=0.5+cdf_scale>[nsub] first;
 }
 
 model {
@@ -31,8 +32,6 @@ model {
 
   real deltaPlus[ntrials-1,nsub]; // prediction error for  CS+
   real deltaMinus[ntrials-1,nsub];    // prediction error for CS-
-
-  vector<lower=0.5-cdf_scale,upper=0.5+cdf_scale>[nsub] first;
 
 
   for (p in 1:nsub){
@@ -74,8 +73,6 @@ generated quantities { //does the same calculations again for the fitted values
 
   real deltaPlus[ntrials-1,nsub]; // prediction error for  CS+
   real deltaMinus[ntrials-1,nsub];    // prediction error for CS-
-
-  vector<lower=0.5-cdf_scale,upper=0.5+cdf_scale>[nsub] first;
 
 
   for (p in 1:nsub){

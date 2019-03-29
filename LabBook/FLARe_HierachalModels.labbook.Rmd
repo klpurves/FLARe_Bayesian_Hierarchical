@@ -1643,16 +1643,16 @@ However there is a lot of variation in the beta paramter (mean -7.21, sd = 134.7
 ```{r}
 ## extract log likelihood
 
-flare_loglike_best <- extract_log_lik(flare_fit_best, parameter_name = "loglik", merge_chains = TRUE)
+flare_loglike <- extract_log_lik(flare_fit, parameter_name = "loglik", merge_chains = TRUE)
 
 #calculate BIC
 
-FLARe_bic_best<-bic(ntrials,-colMeans(flare_loglike_best),2) #number of parameters in that model e.g. 4)
+FLARe_bic<-bic(ntrials,-colMeans(flare_loglike),2) #number of parameters in that model e.g. 4)
 
 ## mean BIC as model comparisons tool:
 
 print("Mean Bayesian information criterion for model")
-mean(FLARe_bic_best)
+mean(FLARe_bic)
 
 ```
 
@@ -1728,7 +1728,7 @@ mean(FLARe_bic_m2)
 
 ```{r}
 
-mod_comp <- rbind(mod_comp,c("Means 2 beta",mean(FLARe_bic)))
+mod_comp <- rbind(mod_comp,c("Means 2 beta",mean(FLARe_bic_m2)))
 
 plot <- ggplot(na.omit(mod_comp),aes(x=model,y=BIC)) +
   geom_bar(stat = "identity") +
@@ -1824,6 +1824,9 @@ The beta doesnt work as well for the CS+ stimulus, need to check if this paramte
 
 ## decide testing rate (min,med,max or off)
 testing('min')
+# try a weakly informative prior
+#N0w <- normal(0, 100)
+
 
 ## set up run
 stanname='beta_meansd_RL_NoBeta.stan'
@@ -1856,7 +1859,7 @@ out_describe(summary_flare)
 ```
 
 
-The alpha parameter variance is normal (mean 0.4 and sd 0.12). Beta is much more bounded now though (combined across both stimuli mean 0.79, sd=1.6) over 4000 iterations on 4 chains.
+
 
 
 #### Create BIC from log likelihood
@@ -2484,7 +2487,7 @@ diag(corr.test(beta_minus_rec,beta_minus)$r)
 
 # Potentially interesting paramters to add to best fit model
 
-## Punishment sensitivity 
+## Model 8: Punishment sensitivity 
 
 How aversive they find the scream reinforcement. Modelling this on the loss aversion paramter in [Charpentier et al](https://f1000.com/work/item/6707134/resources/5864774/pdf) (see the last page before references),
 
@@ -2499,18 +2502,79 @@ where $$\lambda = sensitivity\\to\\screams$$
 
 
 
+```{r}
 
-```{stan output.var=F}
-// remembering to add this to the paramters block:
+## decide testing rate (min,med,max or off)
+testing('min')
 
-<!-- real lambda[nsub] -->
+## set up run
+stanname='beta_mean1beta_PunSens.stan'
 
-<!-- // and this to the model block. -->
+stanfile <- file.path(scriptdir, stanname)
 
-<!-- deltaPlus[t,p] = screamPlus[t,p]*lambda[p]-VPlus[t,p];  -->
-<!-- deltaMinus[t,p] = screamMinus[t,p]*lambda[p]-VMinus[t,p]; -->
+flare_data<-list(ntrials=ntrials,nsub=nsub,screamPlus = t(screamPlus), screamMinus= t(screamMinus),ratingsPlus=t(plus_scaled),ratingsMinus=t(minus_scaled))
+
+flare_fit <- stan(file = stanfile, data = flare_data, iter=chain_iter, chains = chain_n) #add working dir?
+
+save(flare_fit, file=file.path(datadir,'flare_fit_test'))
+
+traceplot(flare_fit,'lp__')
+
+# extract fit data
+summary_flare <- summary(flare_fit)
+
+# extract model summary data
+
+#flare_loglike<- extract_log_lik(flare_fit, parameter_name = "loglik", merge_chains = TRUE)
+
 
 ```
+
+```{r}
+## get some basic output descriptions printed to screen
+
+out_describe(summary_flare)
+
+```
+
+
+
+
+#### Create BIC from log likelihood
+
+```{r}
+## extract log likelihood
+
+flare_loglike <- extract_log_lik(flare_fit, parameter_name = "loglik", merge_chains = TRUE)
+
+#calculate BIC
+
+FLARe_bic<-bic(ntrials,-colMeans(flare_loglike),2) #number of parameters in that model e.g. 4)
+
+## mean BIC as model comparisons tool:
+
+print("Mean Bayesian information criterion for model")
+mean(FLARe_bic)
+
+```
+
+#### Add to bar plot
+
+```{r}
+
+mod_comp <- rbind(na.omit(mod_comp),c("Punishment sensitivity",mean(FLARe_bic)))
+
+plot <- ggplot(mod_comp,aes(x=model,y=BIC)) +
+  geom_bar(stat = "identity") +
+  coord_flip()
+
+show(plot)
+
+```
+
+### Generate
+
+### Recover
 
 
 ## Rating consistency
@@ -2525,13 +2589,78 @@ We will estimate this parameter as a factor that influences the overall shape of
 
 $$shape1(stimulus) = (1 + exp(-\mu * VPlus[t,p] * ((VPlus[t,p] * (1-VPlus[t,p])) / beta[p,1]))^-1 $$
 where $$\mu = logit\\sensitivty$$
+
 Where logit sensitivity effectively means consistency of rating consistency; higher valued should mean greater consistency.
 
 
-```{stan output.var=F}
+```{r}
 
-<!-- shape1_Plus[t,p] = (1+ exp(-mu*VPlus[t,p] * ((VPlus[t,p] * (1-VPlus[t,p])) / beta[p,1]))); -->
-<!-- shape2_Plus[t,p] = (1+ exp(-mu*(1-VPlus[t,p]) * ((VPlus[t,p] * (1-VPlus[t,p])) / beta[p,1]); -->
+## decide testing rate (min,med,max or off)
+testing('min')
+
+## set up run
+stanname='beta_mean1beta_Consistency.stan'
+
+stanfile <- file.path(scriptdir, stanname)
+
+flare_data<-list(ntrials=ntrials,nsub=nsub,screamPlus = t(screamPlus), screamMinus= t(screamMinus),ratingsPlus=t(plus_scaled),ratingsMinus=t(minus_scaled))
+
+flare_fit <- stan(file = stanfile, data = flare_data, iter=chain_iter, chains = chain_n) #add working dir?
+
+save(flare_fit, file=file.path(datadir,'flare_fit_test'))
+
+traceplot(flare_fit,'lp__')
+
+# extract fit data
+summary_flare_con <- summary(flare_fit)
+
+# extract model summary data
+
+#flare_loglike<- extract_log_lik(flare_fit, parameter_name = "loglik", merge_chains = TRUE)
+
+
+```
+
+```{r}
+## get some basic output descriptions printed to screen
+
+out_describe(summary_flare_con)
+
+```
+
+
+The alpha parameter variance is normal (mean 0.4 and sd 0.12). Beta is much more bounded now though (combined across both stimuli mean 0.79, sd=1.6) over 4000 iterations on 4 chains.
+
+
+#### Create BIC from log likelihood
+
+```{r}
+## extract log likelihood
+
+flare_loglike_con <- extract_log_lik(flare_fit, parameter_name = "loglik", merge_chains = TRUE)
+
+#calculate BIC
+
+FLARe_bic<-bic(ntrials,-colMeans(flare_loglike_con),2) #number of parameters in that model e.g. 4)
+
+## mean BIC as model comparisons tool:
+
+print("Mean Bayesian information criterion for model")
+mean(FLARe_bic)
+
+```
+
+#### Add to bar plot
+
+```{r}
+
+mod_comp <- rbind(na.omit(mod_comp),c("...Consistency",mean(FLARe_bic)))
+
+plot <- ggplot(mod_comp,aes(x=model,y=BIC)) +
+  geom_bar(stat = "identity") +
+  coord_flip()
+
+show(plot)
 
 ```
 
