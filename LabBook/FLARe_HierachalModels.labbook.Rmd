@@ -1,5 +1,7 @@
 ---
 title: "Hierachal computational modelling - FLARe"
+author: "Kirstin Purves"
+date: "1 April 2019"
 
 output:
   html_document:
@@ -281,12 +283,20 @@ These use Alex Pikes RStan script with minor modification to make it punishment 
 
 The settings for the script are below, including stan chain paramters and directory set up.
 
+### Function block
+
 
 ```{r, echo=F,results=F}
+
+
 
 #rm(list=ls())
 
 library(tibble)
+library(psych)
+library(tidyverse)
+
+
 
 # directories
 workingdir='/Users/kirstin/Dropbox/SGDP/FLARe/FLARe_MASTER/Projects/Hierachal_modelling/Modelling'
@@ -331,29 +341,40 @@ testing <- function(x) {
 
 }
 
-out_describe<- function(summary){
+out_describe<- function(summary,n,all = NULL){
   
-library(psych)
-print(paste0(chain_iter, " iterations ", ' on ', chain_n,' chains.',sep=" "))
+library(dplyr)
+
+  print(paste0(chain_iter, " iterations ", ' on ', chain_n,' chains.',sep=" "))
 
 print(paste("Estimated",(dim(summary$summary)[1]-1) / 342,"Free paramaters per person",sep=" "))
-print(" ")
-print('Average Rhat')
-print(mean(!is.na(summary$summary[,10])))
 
-count <- 1
+summary <- data.frame(summary$summary[(1:(dim(summary$summary)-1)[1]),])
 
-while (count < (dim(summary$summary)[1]-1)){
+table <- summary %>%
+  mutate(parameter = rep(1:(dim(summary)[1]/n),each = n )) %>%
+  group_by(parameter) %>%
+  summarize(mean = mean(mean,na.rm=T), 
+            se_mean = mean(se_mean,na.rm=), 
+            sd = mean(sd,na.rm=T),
+            Rhat = mean(Rhat,na.rm=T))
+
+param_names <- row.names(summary)[(seq(1,dim(summary)[1],n))]
+
+table$parameter <- param_names
+
+if (is.null(all) & dim(table)[1] > 10) {
   
-  print(row.names(summary$summary)[count])
-  print(" ")
-  print(describe((summary$summary[count:(count+341),1])))
-  print(" ")
-  count <- count+342
-
+  print("This table is very large. Returning only the top 6 entries unless you have set the 3rd function option to 'all'. ")
+  return(head(table))
+  
+} else {
+  
+  return(table)
 }
 
 }
+
 
 # create the n trials variable for RStan
 ntrials=12
@@ -364,6 +385,32 @@ bic<-function(trials,neg_log_like,nparam) {
   if (sum(neg_log_like<0)>0){print('check this is negative log likelihood!!')} 
   2*neg_log_like+nparam*log(trials) #canonical
 }
+
+
+## model compare plot function
+
+plot_models <- function(dataset) {
+  
+dataset$BIC <- odp(as.numeric(dataset$BIC))
+
+dataset <- as.data.frame(na.omit(dataset))
+
+yminv <- min(dataset$BIC,na.rm=T) -5
+ymaxv <- max(dataset$BIC,na.rm=T) +5
+
+plot <- ggplot(dataset,aes(x=reorder(model,BIC),y=BIC)) +
+  geom_bar(stat="identity") +
+  coord_flip() +
+  labs(title = "Model comparison",
+       y="Bayesian Information Criterion (BIC)") +
+  scale_y_continuous(limits=c(yminv,ymaxv),oob=rescale_none)
+
+show(plot)
+
+}
+
+
+
 
 ```
 
@@ -392,6 +439,18 @@ Sys.getenv('LOCAL_CPPFLAGS') #should say '-march=native'
 source('/Users/kirstin/Dropbox/SGDP/Function_library/not_in.R') # Not in %!in% function
 
 ```
+
+
+the below is a function that will format your numbers to one decimal place using sprintf
+
+```{r one decimal place function}
+
+odp <- function(x) {
+  as.numeric(sprintf("%2.2f",x))
+}
+
+```
+
 
 ## Preliminary {.tabset}
 
@@ -1142,7 +1201,7 @@ summary_flare<- summary(flare_fit)
 ```{r}
 ## get some basic output descriptions printed to screen
 
-out_describe(summary_flare)
+out_describe(summary_flare,342)
 
 ```
 
@@ -1191,7 +1250,7 @@ summary_flare<- summary(flare_fit)
 ```{r}
 ## get some basic output descriptions printed to screen
 
-out_describe(summary_flare)
+out_describe(summary_flare,342)
 
 ```
 
@@ -1234,7 +1293,7 @@ summary_flare <- summary(flare_fit)
 ```{r}
 ## get some basic output descriptions printed to screen
 
-out_describe(summary_flare)
+out_describe(summary_flare,342)
 
 ```
 
@@ -1294,7 +1353,7 @@ Hashed this out as it doesnt run!
 ```{r}
 ## get some basic output descriptions printed to screen
 
-# out_describe(summary_flare)
+# out_describe(summary_flare,342)
 
 ```
 
@@ -1355,7 +1414,7 @@ hashed this out as it doesnt run (saves time)
 ```{r}
 ## get some basic output descriptions printed to screen
 
-# out_describe(summary_flare)
+# out_describe(summary_flare,342)
 
 ```
 
@@ -1420,7 +1479,7 @@ Hashed this out as it doesnt run (saves time)
 ```{r}
 ## get some basic output descriptions printed to screen
 
-# out_describe(summary_flare)
+# out_describe(summary_flare,342)
 
 ```
 
@@ -1448,16 +1507,14 @@ This model is substnatially better than either of the other two. Traceplot sugge
 #### Add to bar plot
 
 ```{r}
-# 
-# mod_comp <- rbind(na.omit(mod_comp,c("Mean 1 beta",mean(FLARe_bic))))
-# 
 
-# plot <- ggplot(na.omit(mod_comp),aes(x=model,y=BIC)) +
-#   geom_bar(stat = "identity") +
-#   coord_flip()
+# mod_comp <- rbind(mod_comp,c("Means 1 beta",as.numeric(mean(FLARe_bic))))
 # 
-# show(plot)
-
+# mod_comp$BIC <- odp(as.numeric(mod_comp$BIC))
+# 
+# mod_comp <- as.data.frame(na.omit(mod_comp))
+# 
+# plot_models(mod_comp)
 ```
 
 ### Mean definition 4
@@ -1503,7 +1560,7 @@ summary_flare_best <- summary(flare_fit_best)
 ```{r}
 ## get some basic output descriptions printed to screen
 
-out_describe(summary_flare_best)
+out_describe(summary_flare_best,342)
 
 ```
 
@@ -1530,14 +1587,15 @@ mean(FLARe_bic)
 
 ```{r}
 
-mod_comp <- rbind(mod_comp,c("Means 1 beta",mean(FLARe_bic)))
+mod_comp <- rbind(mod_comp,c("Means 1 beta",as.numeric(mean(FLARe_bic))))
+
+mod_comp$BIC <- odp(as.numeric(mod_comp$BIC))
+
+mod_comp <- as.data.frame(na.omit(mod_comp))
 
 
-plot <- ggplot(na.omit(mod_comp),aes(x=model,y=BIC)) +
-  geom_bar(stat = "identity") +
-  coord_flip()
-
-show(plot)
+## plot function - create plot
+plot_models(mod_comp)
 
 ```
 
@@ -1591,7 +1649,7 @@ For this version we try and estimate the 'mode' to be shape 1. KIRSTIN:: explain
 ```{r}
 ## get some basic output descriptions printed to screen
 
-# out_describe(summary_flare)
+# out_describe(summary_flare,342)
 
 ```
 
@@ -1629,7 +1687,7 @@ summary_flare<- summary(flare_fit)
 ```{r}
 ## get some basic output descriptions printed to screen
 
-out_describe(summary_flare)
+out_describe(summary_flare,342)
 
 ```
 
@@ -1660,15 +1718,16 @@ mean(FLARe_bic)
 #### Add to bar plot
 
 ```{r}
-# 
- mod_comp <- rbind(na.omit(mod_comp),c("Mode 1 beta",mean(FLARe_bic)))
-# 
 
-plot <- ggplot(na.omit(mod_comp),aes(x=model,y=BIC)) +
-  geom_bar(stat = "identity") +
-  coord_flip()
-#
-show(plot)
+mod_comp <- rbind(mod_comp,c("Mode 1 beta",as.numeric(mean(FLARe_bic))))
+
+mod_comp$BIC <- odp(as.numeric(mod_comp$BIC))
+
+mod_comp <- as.data.frame(na.omit(mod_comp))
+
+
+## plot function - create plot
+plot_models(mod_comp)
 
 ```
 ## Model 5: RL mean defined,two beta {.tabset}
@@ -1702,7 +1761,7 @@ summary_flare_m2 <- summary(flare_fit_m2)
 ```{r}
 ## get some basic output descriptions printed to screen
 
-out_describe(summary_flare_m2)
+out_describe(summary_flare_m2,342)
 
 ```
 
@@ -1730,11 +1789,14 @@ mean(FLARe_bic_m2)
 
 mod_comp <- rbind(mod_comp,c("Means 2 beta",mean(FLARe_bic_m2)))
 
-plot <- ggplot(na.omit(mod_comp),aes(x=model,y=BIC)) +
-  geom_bar(stat = "identity") +
-  coord_flip()
 
-show(plot)
+mod_comp$BIC <- odp(as.numeric(mod_comp$BIC))
+
+mod_comp <- as.data.frame(na.omit(mod_comp))
+
+
+## plot function - create plot
+plot_models(mod_comp)
 
 ```
 
@@ -1774,7 +1836,7 @@ summary_flare <- summary(flare_fit)
 ```{r}
 ## get some basic output descriptions printed to screen
 
-out_describe(summary_flare)
+out_describe(summary_flare,342)
 
 ```
 
@@ -1806,11 +1868,13 @@ mean(FLARe_bic)
 
 mod_comp <- rbind(na.omit(mod_comp),c("Mode 2 beta",mean(FLARe_bic)))
 
-plot <- ggplot(mod_comp,aes(x=model,y=BIC)) +
-  geom_bar(stat = "identity") +
-  coord_flip()
+mod_comp$BIC <- odp(as.numeric(mod_comp$BIC))
 
-show(plot)
+mod_comp <- as.data.frame(na.omit(mod_comp))
+
+
+## plot function - create plot
+plot_models(mod_comp)
 
 ```
 
@@ -1820,77 +1884,78 @@ show(plot)
 
 The beta doesnt work as well for the CS+ stimulus, need to check if this paramter adds anything to the model - drop it from our best mean model and see how this changes the fit.
 
+this takes for ever to run and the logliklihood fails. So no idea if it is good yet - come back to this. ***hashed for now***
+
 ```{r}
-
-## decide testing rate (min,med,max or off)
-testing('min')
-# try a weakly informative prior
-#N0w <- normal(0, 100)
-
-
-## set up run
-stanname='beta_meansd_RL_NoBeta.stan'
-
-stanfile <- file.path(scriptdir, stanname)
-
-flare_data<-list(ntrials=ntrials,nsub=nsub,screamPlus = t(screamPlus), screamMinus= t(screamMinus),ratingsPlus=t(plus_scaled),ratingsMinus=t(minus_scaled))
-
-flare_fit <- stan(file = stanfile, data = flare_data, iter=chain_iter, chains = chain_n) #add working dir?
-
-save(flare_fit, file=file.path(datadir,'flare_fit_test'))
-
-traceplot(flare_fit,'lp__')
-
-# extract fit data
-summary_flare <- summary(flare_fit)
-
-# extract model summary data
-
-#flare_loglike<- extract_log_lik(flare_fit, parameter_name = "loglik", merge_chains = TRUE)
+# 
+# ## decide testing rate (min,med,max or off)
+# testing('min')
+# # try a weakly informative prior
+# #N0w <- normal(0, 100)
+# 
+# 
+# ## set up run
+# stanname='beta_meansd_RL_NoBeta.stan'
+# 
+# stanfile <- file.path(scriptdir, stanname)
+# 
+# flare_data<-list(ntrials=ntrials,nsub=nsub,screamPlus = t(screamPlus), screamMinus= t(screamMinus),ratingsPlus=t(plus_scaled),ratingsMinus=t(minus_scaled))
+# 
+# flare_fit <- stan(file = stanfile, data = flare_data, iter=chain_iter, chains = chain_n) #add working dir?
+# 
+# save(flare_fit, file=file.path(datadir,'flare_fit_test'))
+# 
+# traceplot(flare_fit,'lp__')
+# 
+# # extract fit data
+# summary_flare <- summary(flare_fit,na.rm=T)
+# 
+# # extract model summary data
+# 
+# #flare_loglike<- extract_log_lik(flare_fit, parameter_name = "loglik", merge_chains = TRUE)
 
 
 ```
 
 ```{r}
-## get some basic output descriptions printed to screen
-
-out_describe(summary_flare)
+# ## get some basic output descriptions printed to screen
+# 
+# out_describe(summary_flare,342)
 
 ```
-
-
-
-
 
 #### Create BIC from log likelihood
 
 ```{r}
-## extract log likelihood
-
-flare_loglike <- extract_log_lik(flare_fit, parameter_name = "loglik", merge_chains = TRUE)
-
-#calculate BIC
-
-FLARe_bic<-bic(ntrials,-colMeans(flare_loglike),2) #number of parameters in that model e.g. 4)
-
-## mean BIC as model comparisons tool:
-
-print("Mean Bayesian information criterion for model")
-mean(FLARe_bic)
+# 
+# ## extract log likelihood
+# 
+# flare_loglike <- extract_log_lik(flare_fit, parameter_name = "loglik", merge_chains = TRUE)
+# 
+# #calculate BIC
+# 
+# FLARe_bic<-bic(ntrials,-colMeans(flare_loglike),2) #number of parameters in that model e.g. 4)
+# 
+# ## mean BIC as model comparisons tool:
+# 
+# print("Mean Bayesian information criterion for model")
+# mean(FLARe_bic)
 
 ```
 
 #### Add to bar plot
 
 ```{r}
-
-mod_comp <- rbind(na.omit(mod_comp),c("Mean no beta",mean(FLARe_bic)))
-
-plot <- ggplot(mod_comp,aes(x=model,y=BIC)) +
-  geom_bar(stat = "identity") +
-  coord_flip()
-
-show(plot)
+# 
+# mod_comp <- rbind(na.omit(mod_comp),c("Mean no beta",mean(FLARe_bic)))
+# 
+# #
+# mod_comp$BIC <- odp(as.numeric(mod_comp$BIC))
+# 
+# mod_comp <- as.data.frame(na.omit(mod_comp))
+# 
+## plot function - create plot
+# plot_models(mod_comp)
 
 ```
 
@@ -2533,11 +2598,9 @@ summary_flare <- summary(flare_fit)
 ```{r}
 ## get some basic output descriptions printed to screen
 
-out_describe(summary_flare)
+out_describe(summary_flare,342)
 
 ```
-
-
 
 
 #### Create BIC from log likelihood
@@ -2554,6 +2617,7 @@ FLARe_bic<-bic(ntrials,-colMeans(flare_loglike),2) #number of parameters in that
 ## mean BIC as model comparisons tool:
 
 print("Mean Bayesian information criterion for model")
+
 mean(FLARe_bic)
 
 ```
@@ -2564,11 +2628,13 @@ mean(FLARe_bic)
 
 mod_comp <- rbind(na.omit(mod_comp),c("Punishment sensitivity",mean(FLARe_bic)))
 
-plot <- ggplot(mod_comp,aes(x=model,y=BIC)) +
-  geom_bar(stat = "identity") +
-  coord_flip()
+mod_comp$BIC <- odp(as.numeric(mod_comp$BIC))
 
-show(plot)
+mod_comp <- as.data.frame(na.omit(mod_comp))
+
+
+## plot function - create plot
+plot_models(mod_comp)
 
 ```
 
@@ -2624,7 +2690,7 @@ summary_flare_con <- summary(flare_fit)
 ```{r}
 ## get some basic output descriptions printed to screen
 
-out_describe(summary_flare_con)
+out_describe(summary_flare_con,342)
 
 ```
 
@@ -2656,11 +2722,14 @@ mean(FLARe_bic)
 
 mod_comp <- rbind(na.omit(mod_comp),c("...Consistency",mean(FLARe_bic)))
 
-plot <- ggplot(mod_comp,aes(x=model,y=BIC)) +
-  geom_bar(stat = "identity") +
-  coord_flip()
 
-show(plot)
+mod_comp$BIC <- odp(as.numeric(mod_comp$BIC))
+
+mod_comp <- as.data.frame(na.omit(mod_comp))
+
+
+## plot function - create plot
+plot_models(mod_comp)
 
 ```
 
@@ -2688,6 +2757,8 @@ this paramter is hopw much they retasin what they learned over previous trials a
 *add priors! These are what you expect the group to look like (i.e alpha is normally distributed around a mean of 0.5 with variance of 10 or something)
 *LOOKUP R stan choice of priors.
 * can have informative or uninformative priors (i.e. agnostic or not)
+
+* Avoidance as screams!!!!! 
 
 * Add parameters
 
