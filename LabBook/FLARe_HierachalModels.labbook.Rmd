@@ -2411,7 +2411,7 @@ Only showing the diaganols from corr.test package here to get the important t1 x
 ```{r}
 
 print("real ratings with estimated ratings: CS MINUS")
-diag(corr.test(rowMeans(rating_est_minus),rowMeans(minus_scaled))$r)
+diag(corr.test(rating_est_minus,minus_scaled)$r)
 
 print("real ratings with estimated ratings: CS MINUS (average for all trials)")
 cor(rowMeans(rating_est_minus),rowMeans(minus_scaled))
@@ -2674,8 +2674,9 @@ shape2m <- data.frame(matrix(ncol=ntrials,nrow=nsub))
 vp <- data.frame(matrix(ncol=ntrials,nrow=nsub))
 vm <- data.frame(matrix(ncol=ntrials,nrow=nsub))
 
-vp[1] <- rnorm(nsub,0.5,0.05)
-vm[1] <- rnorm(nsub,0.5,0.05)
+vp[1] <- rnorm(nsub,0.5,0.025)
+vm[1] <- rnorm(nsub,0.5,0.025)
+
 
 # prediction error 
 
@@ -2778,7 +2779,7 @@ Only showing the diaganols from corr.test package here to get the important t1 x
 ```{r}
 
 print("real ratings with estimated ratings: CS MINUS")
-diag(corr.test(rowMeans(rating_est_minus),rowMeans(minus_scaled))$r)
+diag(corr.test(rating_est_minus,minus_scaled)$r)
 
 print("real ratings with estimated ratings: CS MINUS (average for all trials)")
 cor(rowMeans(rating_est_minus),rowMeans(minus_scaled))
