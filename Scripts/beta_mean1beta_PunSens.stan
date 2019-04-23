@@ -36,6 +36,14 @@ model {
   real deltaPlus[ntrials-1,nsub]; // prediction error for  CS+
   real deltaMinus[ntrials-1,nsub];    // prediction error for CS-
 
+  //add generic weakly informative priors for all key parameters
+
+  alpha ~ normal(0,1);
+  beta ~ normal(0,1);
+  lambda ~ normal(0,1);
+
+  // define model
+
   for (p in 1:nsub){
     VPlus[1,p]=first[p]; // assume that the mid point varies like our ratings. so a range between 0.5-0.0555556 and 0.5+0.0000056
     VMinus[1,p]=first[p];

@@ -2575,7 +2575,7 @@ where $$\lambda = sensitivity\\to\\screams$$
 ```{r}
 
 ## decide testing rate (min,med,max or off)
-testing('med')
+testing('min')
 
 ## set up run
 stanname='beta_mean1beta_PunSens.stan'
@@ -2824,7 +2824,7 @@ flare_fit_rec <- stan(file = stanfile, data = flare_data, iter=chain_iter,warmup
 
 save(flare_fit_rec, file=file.path(datadir,'flare_fit_2betaMean'))
 
-traceplot(flare_fit_best,'lp__')
+traceplot(flare_fit_rec,'lp__')
 
 # extract fit data
 summary_flare <- summary(flare_fit_rec)
@@ -2864,8 +2864,9 @@ diag(corr.test(lambda_rec,lambda)$r)
 
 ```
 
-### Recover
+Beta is very poorly recovered here. Alpha and Lambda are recovered exceptionally well. 
 
+Will try a quick 2 beta mdoel with punishment sensitivity to see if this improves things. 
 
 ## Rating consistency
 
@@ -2969,8 +2970,7 @@ Basically here we want to capture a parameter that estimates how much the learni
 
 ## Forgetting
 
-this paramter is how much they retasin what they learned over previous trials and use it to inform the current rating.
-
+this paramter is how much they retain what they learned over previous trials and use it to inform the current rating.
 
 
 
