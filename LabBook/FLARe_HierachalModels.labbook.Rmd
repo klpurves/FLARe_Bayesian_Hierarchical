@@ -1100,11 +1100,18 @@ Create datasets for the acquisition CS- and extinction CS+ and CS- reflecting th
 
 ```{r}
 
-## Create the no scream daatsets for all
 
+## Create the no scream daatsets for all
 screamMinus <- matrix(0L,nrow=nsub, ncol=ntrials)
 
-# Initialise plus dataset in the same way, but make the first trial 1 for everyone, then add 8 additional random 1's per person. Do this in four random patterns to mimic the real data
+library(data.table)
+
+## read in the screams for acquisition 
+screamPlus <- fread("/Users/kirstin/Dropbox/SGDP/FLARe/FLARe_MASTER/Projects/LatentGrowth/Datasets/bayes_screams_acq.csv",data.table=F)
+
+### for the time being, simulate the NA data for the studies where I havent yet finished cleaning the screams.
+
+# make the first trial 1 for everyone, then add 8 additional random 1's per person. Do this in four random patterns to mimic the real data
 
 sc1 <- c(1,1,0,1,0,0,1,1,1,1,1)
 sc2 <- c(0,1,1,1,0,0,1,1,1,1,1)
@@ -1112,29 +1119,27 @@ sc3 <- c(1,1,1,0,1,0,1,0,1,1,1)
 sc4 <- c(1,0,1,1,0,0,1,1,1,1,1)
 
 
-screamPlus <- matrix(0L,nrow=nsub, ncol=ntrials)
-
-screamPlus[,1] <- 1
-
+screamPlus[,1] <- ifelse(is.na(screamPlus[,1]),1,screamPlus[,1])
 
 # for (n in 1:dim(screamPlus)[1]) {
 #   print(n)
 #   screamPlus[n,2:12] <- sample(patts,1,replace=T)
 # }
 
-
 for (n in 1:dim(screamPlus)[1]) {
   
   a <- sample(c(1,4),1)
   
-  if (a == 1) {
-    screamPlus[n,2:12] <- sc1
-  } else if (a == 2) {
-    screamPlus[n,2:12] <- sc2
-  } else if (a == 3){
-    screamPlus[n,2:12] <- sc3
-  } else {
-    screamPlus[n,2:12] <- sc4
+  if (is.na(screamPlus[n,2])){
+    if (a == 1) {
+      screamPlus[n,2:12] <- sc1
+    } else if (a == 2) {
+      screamPlus[n,2:12] <- sc2
+    } else if (a == 3){
+      screamPlus[n,2:12] <- sc3
+    } else {
+      screamPlus[n,2:12] <- sc4
+    }
   }
 }
 
@@ -2570,7 +2575,7 @@ where $$\lambda = sensitivity\\to\\screams$$
 ```{r}
 
 ## decide testing rate (min,med,max or off)
-testing('min')
+testing('med')
 
 ## set up run
 stanname='beta_mean1beta_PunSens.stan'
@@ -2650,6 +2655,7 @@ alpha_est <- data.frame(params$summary[1:342,1])
 beta <- data.frame(params$summary[343:684,1])
 lambda <- data.frame(params$summary[1027:1368,1])
 
+names(alpha_est) <- "alpha"
 names(beta) <- "beta"
 names(lambda) <- "lambda"
   
@@ -2963,11 +2969,13 @@ Basically here we want to capture a parameter that estimates how much the learni
 
 ## Forgetting
 
-this paramter is hopw much they retasin what they learned over previous trials and use it to inform the current rating.
+this paramter is how much they retasin what they learned over previous trials and use it to inform the current rating.
+
+
+
+
 
 # to do
-
-* bin the generated ratings so that they reflect the nature of original scale (i.e. not continuous - 0-1 == 1, 1-2 == 2 etc.)
 
 *investigte change point detection paramters (when reinforcement changes - i.e. moving acquisition to extinction)
   * could do this or model the phases separately - check which best fits
@@ -2976,11 +2984,13 @@ this paramter is hopw much they retasin what they learned over previous trials a
 *LOOKUP R stan choice of priors.
 * can have informative or uninformative priors (i.e. agnostic or not)
 
-* Avoidance as screams!!!!! 
+* Avoidance as volume reductions
 
 * Add parameters
 
 * DO NOT FORGET TO MAKE SURE WE HAVE AN ACCURATE SCREAM PATTERN PER PERSON FOR CS+ IN ACQUISITION
+
+
 
 # Push any updates to github 
 
