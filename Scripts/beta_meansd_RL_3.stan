@@ -38,7 +38,7 @@ model {
       deltaPlus[t,p] = screamPlus[t,p]-VPlus[t,p]; // prediction error calc CS+
       deltaMinus[t,p] = screamMinus[t,p]-VMinus[t,p]; // ditto CS-
       VPlus[t+1,p]=VPlus[t,p]+alpha[p]*deltaPlus[t,p]; // value calc CS+
-      VMinus[t+1,p]=VMinus[t,p]+alpha[p]*deltaPlus[t,p]; // ditto CS-
+      VMinus[t+1,p]=VMinus[t,p]+alpha[p]*deltaMinus[t,p]; // ditto CS-
     }
 
     for (t in 1:ntrials){
@@ -77,7 +77,7 @@ generated quantities { //does the same calculations again for the fitted values
       deltaPlus[t,p] = screamPlus[t,p]-VPlus[t,p]; // prediction error calc CS+
       deltaMinus[t,p] = screamMinus[t,p]-VMinus[t,p]; // ditto CS-
       VPlus[t+1,p]=VPlus[t,p]+alpha[p]*deltaPlus[t,p]; // value calc CS+
-      VMinus[t+1,p]=VMinus[t,p]+alpha[p]*deltaPlus[t,p]; // ditto CS-
+      VMinus[t+1,p]=VMinus[t,p]+alpha[p]*deltaMinus[t,p]; // ditto CS-
     }
 
     for (t in 1:ntrials){
@@ -85,7 +85,7 @@ generated quantities { //does the same calculations again for the fitted values
       shape1_Minus[t,p] = ((1-VMinus[t,p])/beta[p] - 1/VMinus[t,p])*(VMinus[t,p])^2;
       shape2_Plus[t,p] = ((1-VPlus[t,p])/beta[p] - 1/VPlus[t,p])*(1/VPlus[t,p]-1);
       shape2_Minus[t,p] = ((1-VMinus[t,p])/beta[p] - 1/VMinus[t,p])*(1/VMinus[t,p]-1);
-      
+
     //  print(beta_lpdf(ratingsPlus[t,p] | shape1_Plus[t,p],shape2_Plus[t,p]))
 
       // increments the log likelihood trial by trial using the log choice prob and parameters estimated in the model block

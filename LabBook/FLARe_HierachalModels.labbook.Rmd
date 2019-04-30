@@ -1,5 +1,5 @@
 ---
-title: "Hierachal computational modelling - FLARe"
+title: "Hierachical computational modelling - FLARe"
 author: "Kirstin Purves"
 date: "1 April 2019"
 
@@ -23,7 +23,7 @@ output:
 
 # Introduction {.tabset}
 
-Lab book for analyses using hierachal computational modelling to identify paramters that define the best model of learning as it applies to fear conditioning acquisition and extinction using FLARe fear conditioning data. 
+Lab book for analyses using hierachal computational modelling to identify parameters that define the best model of learning as it applies to fear conditioning acquisition and extinction using FLARe fear conditioning data. 
 Long abstract, justification and analysis plan found in prelim manuscript [here]([https://docs.google.com/document/d/1JhVCf0jlXFwXYQ2kjS3fpl7mYexDcULn7L1ZgJ6Nolw/edit?usp=sharing])
 
 In short:
@@ -64,7 +64,7 @@ Identifying parameters that predict individual trajectories of fear learning and
 [Hypotheses About the Relationship of Cognition With Psychopathology Should be Tested by Embedding Them Into Empirical Priors (Moutoussist et al., 2018)](https://www.frontiersin.org/articles/10.3389/fpsyg.2018.02504/full) - Including variables of interest (e.g. anxiety) in the model    
 
 
-Toby Wise has just submitted an aversive learning paper incorporating beta probability distributions in the best model for uncertain learning paramters etc.
+Toby Wise has just submitted an aversive learning paper incorporating beta probability distributions in the best model for uncertain learning parameters etc.
 
 A copy of this is ![here](/Users/kirstin/Dropbox/SGDP/FLARe/PDFs/uncertainty_attention_paper_PLoSCB.pdf)
 
@@ -72,7 +72,7 @@ A copy of this is ![here](/Users/kirstin/Dropbox/SGDP/FLARe/PDFs/uncertainty_att
 ## Analysis plan 
 
 1.  Define set of a priori models moving from simple to more complex  
-      + Some paramters to include: 
+      + Some parameters to include: 
         + Rate of learning (sometimes with punishment reinforcement)
         + Sensitivity to punishment
         + Pre-existing anxiety
@@ -130,13 +130,13 @@ We can scale the beta by how aversive participants find the shock. i.e. it might
 
 *generalisation*
 
-We can do this with a single beta distribution for each phase (collapsing over the two stimuli). This would be akin to a per phase generalisation paramaterer in that it will be smaller if they tend to choose the same expectancy for both stimuli and larger if they tend to choose very differently for both stimuli. 
+We can do this with a single beta distribution for each phase (collapsing over the two stimuli). This would be akin to a per phase generalisation parameter in that it will be smaller if they tend to choose the same expectancy for both stimuli and larger if they tend to choose very differently for both stimuli. 
 
 ***However***, because these variables are not really equivalent (i.e the reinforcement rate is different for both, and we use this in the model)   
 
-So instead we can create a paramater which is the value of cs- weighted by some value of the cs+. How much each individual weights by the Cs+ can be freely estimated by the model and can be the generalisation paramter.
+So instead we can create a paramater which is the value of cs- weighted by some value of the cs+. How much each individual weights by the Cs+ can be freely estimated by the model and can be the generalisation parameter.
 
-So this would be vminus = vminus + (w)vplus (where the w paramter is the freely estimated paramter per person)
+So this would be vminus = vminus + (w)vplus (where the w parameter is the freely estimated parameter per person)
 
 
 *per stimulus*
@@ -154,7 +154,7 @@ we also need a model that incorporates 'leak'. **i.e.** learning leak - likely t
 
 *uncertainty*
 
-We should consider incorportating a paramter that maps to participant uncertainty about outcomes. 
+We should consider incorportating a parameter that maps to participant uncertainty about outcomes. 
 
 *anxiety*
 
@@ -173,13 +173,13 @@ the basic stan terminology for this is below:
 
 >> beta_lpdf(rating[t,p]|shape1[t,p],shape2[t,p])
 
-where beta_lpdf is the probability density given the rating made and each of the two beta distribution shape paramters that we estimate.
+where beta_lpdf is the probability density given the rating made and each of the two beta distribution shape parameters that we estimate.
 
 This is what we will use to compare models.
 
 ### Terminology
 
-*V* == 'value'. Baasically a paramter that is about the salience of the stimulus at any given point.    
+*V* == 'value'. Baasically a parameter that is about the salience of the stimulus at any given point.    
 *alpha* == 'learning rate'. A parameter that describes how sensitive people are to updating their learning. So a fast learning rate means that learning on any given trial is weighted more based on the trials immediatly preceding than past ones, and a slow learning rate means that all past events influence learning more evenly.  Alex's tennis analogy is good here (Federer - stable player, can predict a win based on all matches; Murray - volatile player; his last match is best predictor of next match performance). 
 *beta* == 'confidence'. This is sort of an error term - how much variance in rating choice is there for each person/trial. Can be thought of as the variance, or beta^2 as the sd.   
 
@@ -187,14 +187,14 @@ Can be confusing as we are using beta distributions (different thing) which has 
 
 ### Beta distribution visualisation
 
-and how they change depending on whether you change the beta or alpha paramters.
+and how they change depending on whether you change the beta or alpha parameters.
 
 ![A really nice summary visualisation](/Users/kirstin/Dropbox/Screenshots/beta_dist.png)
 
 Here are some simulations I can change and play with the illustrate the same sort of thing. 
 
 
-```{r,echo=F}
+```{r beta simulations,echo=F}
 x <- seq(0, 1, length = 21)
 dbeta(x, 1, 1)
 pbeta(x, 1, 1)
@@ -249,9 +249,9 @@ Will probably do all per trial. Will do an early sensitivity check to confirm th
 *** At this point, compare the two above. Ensure the per trial fits better, and if it does then do all below per trial***   
 3.  "" scaled 
 4.  Single beta Single alpha reinforcement learning model (estimate both the beta and the alpha *i.e.* learning rate)
-5.  Single beta single alpha reinforcement learning with mean + sd for the beta estimate as a paramter
+5.  Single beta single alpha reinforcement learning with mean + sd for the beta estimate as a parameter
 6.  Beta per stimulus   
-7.  Beta per stimulus + generalisation paramter (Vminus = vminus + wvplus)   
+7.  Beta per stimulus + generalisation parameter (Vminus = vminus + wvplus)   
 8.  Leaky beta   
 9.  Leaky beta + uncertainty   
 10.  Leaky beta + uncertainty + anxiety    
@@ -259,7 +259,7 @@ Will probably do all per trial. Will do an early sensitivity check to confirm th
 ### Justification of model components
 
 *Alpha*
-Learning rate paramter. If high then will be very influenced by previous trial events, if low, then will be more standardly influenced by accumulating events.
+Learning rate parameter. If high then will be very influenced by previous trial events, if low, then will be more standardly influenced by accumulating events.
 
 * Single alpha per person 
     * Assumes that learning rate is a constant for each individual that might be scaled by other factors, such as certainty or sensitivity.
@@ -274,185 +274,8 @@ Variance/certainty parameter
 
 
 
-# Analyses
 
-## Set up stan 
-
-
-These use Alex Pikes RStan script with minor modification to make it punishment only to see if it runs. Testing that the approach works with the current data set up etc.  
-
-The settings for the script are below, including stan chain paramters and directory set up.
-
-### Function block
-
-
-```{r, echo=F,results=F}
-
-
-
-#rm(list=ls())
-
-library(tibble)
-library(psych)
-library(tidyverse)
-
-
-
-# directories
-workingdir='/Users/kirstin/Dropbox/SGDP/FLARe/FLARe_MASTER/Projects/Hierachal_modelling/Modelling'
-scriptdir='/Users/kirstin/Dropbox/SGDP/FLARe/FLARe_MASTER/Projects/Hierachal_modelling/Scripts'
-datadir='/Users/kirstin/Dropbox/SGDP/FLARe/FLARe_MASTER/Projects/LatentGrowth/Datasets/'
-
-## write function to set each block as test or not individually.
-## three testing levels - min, med, max. 
-## if off, then will set to normal stan paramter of 1000 warmup and 4000 iterations on 4 chains
-
-testing <- function(x) {
-  
-  if (x %in% c('min',"Min")) {
-    chain_iter<<-400
-    warm_up<<-100
-    chain_n<<-1
-  } else if ( x %in% c('med' ,'Med')) {
-    
-    chain_iter<<-1000
-    warm_up<<-500
-    chain_n<<-1
-    
-  } else if ( x %in% c('max','Max')) {
-    
-    chain_iter<<-2000
-    warm_up<<-1000
-    chain_n<<-2
-    
-  } else if ( x %in% c('off' ,'Off')) {
-    
-    chain_iter<<-4000
-    warm_up<<-1000
-    chain_n<<-4
-    
-  } else if ( x %in% c('skip' ,'Skip')) {
-    
-    chain_iter<<-0
-    warm_up<<-0
-    chain_n<<-0
-    
-  } 
-
-}
-
-out_describe<- function(summary,n,all = NULL){
-  
-library(dplyr)
-
-  print(paste0(chain_iter, " iterations ", ' on ', chain_n,' chains.',sep=" "))
-
-print(paste("Estimated",(dim(summary$summary)[1]-1) / 342,"Free paramaters per person",sep=" "))
-
-summary <- data.frame(summary$summary[(1:(dim(summary$summary)-1)[1]),])
-
-table <- summary %>%
-  mutate(parameter = rep(1:(dim(summary)[1]/n),each = n )) %>%
-  group_by(parameter) %>%
-  summarize(mean = mean(mean,na.rm=T), 
-            se_mean = mean(se_mean,na.rm=), 
-            sd = mean(sd,na.rm=T),
-            Rhat = mean(Rhat,na.rm=T))
-
-param_names <- row.names(summary)[(seq(1,dim(summary)[1],n))]
-
-table$parameter <- param_names
-
-if (is.null(all) & dim(table)[1] > 10) {
-  
-  print("This table is very large. Returning only the top 6 entries unless you have set the 3rd function option to 'all'. ")
-  return(head(table))
-  
-} else {
-  
-  return(table)
-}
-
-}
-
-
-# create the n trials variable for RStan
-ntrials=12
-
-## canonical BIC function (Alex Pikes)
-
-bic<-function(trials,neg_log_like,nparam) {
-  if (sum(neg_log_like<0)>0){print('check this is negative log likelihood!!')} 
-  2*neg_log_like+nparam*log(trials) #canonical
-}
-
-
-## model compare plot function
-
-plot_models <- function(dataset) {
-  
-dataset$BIC <- odp(as.numeric(dataset$BIC))
-
-dataset <- as.data.frame(na.omit(dataset))
-
-yminv <- min(dataset$BIC,na.rm=T) -5
-ymaxv <- max(dataset$BIC,na.rm=T) +5
-
-plot <- ggplot(dataset,aes(x=reorder(model,BIC),y=BIC)) +
-  geom_bar(stat="identity") +
-  coord_flip() +
-  labs(title = "Model comparison",
-       y="Bayesian Information Criterion (BIC)") +
-  scale_y_continuous(limits=c(yminv,ymaxv),oob=rescale_none)
-
-show(plot)
-
-}
-
-
-
-
-```
-
-This loads the libraries and source files needed to run this script, and sets up RStan
-
-```{r, echo = F,results='hide',message=F}
-
-# libraries and source files 
-library('MASS')
-library('boot')
-library('dplyr')
-library('reshape')
-library('tidyr')
-library('rstan') 
-library('loo')    # this is model comparison package. helps extract loglikelihood too.
-library('data.table')
-
-#options for RSTAN
-options(mc.cores = parallel::detectCores())
-rstan_options(auto_write = TRUE)
-Sys.setenv(LOCAL_CPPFLAGS = '-march=native')
-Sys.getenv('LOCAL_CPPFLAGS') #should say '-march=native'
-
-#functions (if and when relevant and added)
-# source('/Users/kirstin/Dropbox/SGDP/Function_library/<<function script name>>')
-source('/Users/kirstin/Dropbox/SGDP/Function_library/not_in.R') # Not in %!in% function
-
-```
-
-
-the below is a function that will format your numbers to one decimal place using sprintf
-
-```{r one decimal place function}
-
-odp <- function(x) {
-  as.numeric(sprintf("%2.2f",x))
-}
-
-```
-
-
-## Preliminary {.tabset}
+# Preliminary {.tabset}
 
 ### Compare a priori to data {.tabset}
 
@@ -462,7 +285,8 @@ only doing this 'accurately' for the acquisition CS+, as the simulations require
 
 #####  12 trials; probability = 0.75
 
-```{r,echo=F}
+```{r leaqrning rate simulations,echo=F}
+
 #this is a very basic script
 #created by Alex Pike 14/02/19
 #it simulates the learning of the value (Q) of a rewarded stimulus
@@ -669,8 +493,7 @@ title('Probabilistic',sub=paste0("alpha = ",a,sep=" "))
 
 #### Plot subset of trajectories in flare
 
-```{r,echo=F}
-
+```{r subset FLARe data,echo=F}
 
 library(data.table)
 library(ggplot2)
@@ -795,13 +618,276 @@ This is to check that all is compiling and working and to give and idea of data 
 
 
 
-#### Adjust dataframe
+#### Set up procedure to create and sync models.
+
+This directs to my local machine here ***/Users/kirstin/Dropbox/SGDP/FLARe/FLARe_MASTER/Projects/Hierachal_modelling/Scripts*** and is remotely linked to the github [repository here](https://github.com/klpurves/FLARe_Bayesian_hierarchical).  
+
+##### Make sure the most up to date stan file is in the remote repo
+
+
+```{bash update from git}
+
+git pull Bayes_modelling
+   
+```
+
+
+
+# Analyses
+
+### Function block
+
+
+```{r call libraries, echo=F,results=F}
+
+#rm(list=ls())
+
+library(tibble)
+library(psych)
+library(tidyverse)
+
+
+# directories
+workingdir='/Users/kirstin/Dropbox/SGDP/FLARe/FLARe_MASTER/Projects/Hierachal_modelling/Modelling'
+scriptdir='/Users/kirstin/Dropbox/SGDP/FLARe/FLARe_MASTER/Projects/Hierachal_modelling/Scripts'
+datadir='/Users/kirstin/Dropbox/SGDP/FLARe/FLARe_MASTER/Projects/LatentGrowth/Datasets/'
+
+## write function to set each block as test or not individually.
+## three testing levels - min, med, max. 
+## if off, then will set to normal stan parameter of 1000 warmup and 4000 iterations on 4 chains
+
+
+```
+
+
+#### test function
+
+A function for running minimal, medium or maximal tests of the stan data. This changes how many chains and iterations are run 
+
+```{r testing stan}
+testing <- function(x) {
+  
+  if (x %in% c('min',"Min")) {
+    chain_iter<<-400
+    warm_up<<-100
+    chain_n<<-1
+  } else if ( x %in% c('med' ,'Med')) {
+    
+    chain_iter<<-1000
+    warm_up<<-500
+    chain_n<<-1
+    
+  } else if ( x %in% c('max','Max')) {
+    
+    chain_iter<<-2000
+    warm_up<<-1000
+    chain_n<<-2
+    
+  } else if ( x %in% c('full' ,'Full')) {
+    
+    chain_iter<<-4000
+    warm_up<<-1000
+    chain_n<<-4
+    
+  } else if ( x %in% c('skip' ,'Skip')) {
+    
+    chain_iter<<-0
+    warm_up<<-0
+    chain_n<<-0
+    
+  } 
+
+}
+```
+
+#### Model run, load or skip
+
+
+A function for either running the model, loading in the data if it already exists and doesnt need redoing, or skipping block entirely.
+
+x is testing command, skip or load commans
+y is stan script
+z is flare_data set to use.
+
+*Note that this needs to have scriptdir and datadir existing in the workplace*
+
+```{r run or load}
+
+model_run <- function(x,y,z) {
+
+  if (x %in% c('skip',"Skip")) {
+    
+    stop("skipping this model")
+    
+  }
+    
+  if (x %in% c('min',"med","max","Min","Med","Max","full","Full")) {
+    
+  print("running model")
+  
+  testing(x)
+  stanname = y
+  stanfile <- file.path(scriptdir, stanname)
+  flare_data <- z
+  # note that flare_data is set up elsewhere (see block below)
+  flare_fit <- stan(file = stanfile, data = flare_data, iter=chain_iter, chains = chain_n) #add working dir?
+  save_name <- gsub(".stan",".rds", stanname)
+  saveRDS(flare_fit, file=file.path(datadir,save_name))
+  
+  print(traceplot(flare_fit,'lp__'))
+  
+  # extract fit data
+  return(summary(flare_fit))
+  
+  } 
+  
+  if (x %in% c('load',"Load")) {
+    
+    print("Loading existing model fit data")
+    stanname = gsub(".stan",".rds", y)
+    fitfile <- readRDS(file=paste0(datadir,stanname))
+    print(traceplot(fitfile,'lp__'))
+    return(summary(fitfile))
+    
+    
+    
+  }
+}
+
+```
+
+#### out describe
+
+
+Function for describing the mean etc of freely estimated parameters from STAN output
+
+```{r stan out descriptives}
+
+out_describe<- function(summary,n,all = NULL){
+  
+library(dplyr)
+
+  print(paste0(chain_iter, " iterations ", ' on ', chain_n,' chains.',sep=" "))
+
+  print(paste("Estimated",(dim(summary$summary)[1]-1) / nsub,"Free paramaters per person",sep=" "))
+
+  summary <- data.frame(summary$summary[(1:(dim(summary$summary)-1)[1]),])
+
+table <- summary %>%
+  mutate(parameter = rep(1:(dim(summary)[1]/n),each = n )) %>%
+  group_by(parameter) %>%
+  summarize(mean = mean(mean,na.rm=T), 
+            se_mean = mean(se_mean,na.rm=), 
+            sd = mean(sd,na.rm=T),
+            Rhat = mean(Rhat,na.rm=T))
+
+param_names <- row.names(summary)[(seq(1,dim(summary)[1],n))]
+
+table$parameter <- param_names
+
+if (is.null(all) & dim(table)[1] > 10) {
+  
+  print("This table is very large. Returning only the top 6 entries unless you have set the 3rd function option to 'all'. ")
+  return(head(table))
+  
+} else {
+  
+  return(table)
+}
+
+}
+
+
+```
+
+#### BIC
+
+Canonincal BIC function from log likelihood courtesy of Alex Pike
+
+```{r canonical BIC}
+## canonical BIC function (Alex Pikes)
+
+bic<-function(trials,neg_log_like,nparam) {
+  if (sum(neg_log_like<0)>0){print('check this is negative log likelihood!!')} 
+  2*neg_log_like+nparam*log(trials) #canonical
+}
+
+
+```
+
+
+#### model plot
+
+a function for plotting BIC barchart for different models contained in a dataset
+
+```{r compare models}
+## model compare plot function
+
+plot_models <- function(dataset) {
+  
+dataset$BIC <- odp(as.numeric(dataset$BIC))
+
+dataset <- as.data.frame(na.omit(dataset))
+
+yminv <- min(dataset$BIC,na.rm=T) -5
+ymaxv <- max(dataset$BIC,na.rm=T) +5
+
+plot <- ggplot(dataset,aes(x=reorder(model,BIC),y=BIC)) +
+  geom_bar(stat="identity") +
+  coord_flip() +
+  labs(title = "Model comparison",
+       y="Bayesian Information Criterion (BIC)") +
+  scale_y_continuous(limits=c(yminv,ymaxv),oob=rescale_none)
+
+show(plot)
+
+}
+
+
+
+
+```
+
+
+#### ODP
+the below is a function that will format your numbers to one decimal place using sprintf
+
+```{r one decimal place function}
+
+odp <- function(x) {
+  as.numeric(sprintf("%2.2f",x))
+}
+
+```
+
+
+
+## Create datasets
+
+### notes
+
+We need to rescale our dataset here to be between 0 and 1. 
+
+Importantly, because we are using the proportion of trials that **are not** reinforced as a known parameter for statistical reasons (we don't want a proportion of .75 and 1, better to have .25 and 0), we have made our rescaled expectancy values as 1 - rescaled(x). This means that we will still be able to interpret the results in the expected way (i.e. higher rating is greater expectation of the outcome).
+
+
+### Expectancy data
 
 load in the week 1 app and lab data for FLARe pilot, TRT and headphones studies. Make it long form.
 
 Try with acquisition data first. This is formatted with no column names, with no missing data.
 
-Derive the n parameter for both files and check these match
+Derivethe n parameter for both files and check these match
+
+
+#### set up trial number
+
+```{r trial number}
+# create the n trials variable for RStan
+ntrials=12
+```
+
+
 
 ```{r}
 
@@ -843,52 +929,7 @@ plus[1:2,]
 
 The expectancy rating datasets look like they are formatted fine and ntrials and nsub variables should exist. 
 
-##### Create scream data
-
-Need to go back to stage zero and keep scream yes/no as a variable. For now to see if this runs create simulated version for the CS+. CS- will remain the same.
-
-```{r}
-
-screamMinus <- matrix(0L,nrow=nsub, ncol=ntrials)
-
-# Initialise plus dataset in the same way, but make the first trial 1 for everyone, then add 8 additional random 1's per person. Do this in four random patterns to mimic the real data
-
-sc1 <- c(1,1,0,1,0,0,1,1,1,1,1)
-sc2 <- c(0,1,1,1,0,0,1,1,1,1,1)
-sc3 <- c(1,1,1,0,1,0,1,0,1,1,1)
-sc4 <- c(1,0,1,1,0,0,1,1,1,1,1)
-
-
-screamPlus <- matrix(0L,nrow=nsub, ncol=ntrials)
-
-screamPlus[,1] <- 1
-
-
-# for (n in 1:dim(screamPlus)[1]) {
-#   print(n)
-#   screamPlus[n,2:12] <- sample(patts,1,replace=T)
-# }
-
-
-for (n in 1:dim(screamPlus)[1]) {
-  
-  a <- sample(c(1,4),1)
-  
-  if (a == 1) {
-    screamPlus[n,2:12] <- sc1
-  } else if (a == 2) {
-    screamPlus[n,2:12] <- sc2
-  } else if (a == 3){
-    screamPlus[n,2:12] <- sc3
-  } else {
-    screamPlus[n,2:12] <- sc4
-  }
-}
-
-```
-
-
-##### make rating data binary
+#### make rating data binary
 
 
 for now to see if stan runs using bernoulli-logit function make binary resposnes from expectancy i.e. >=4.5 ==1, <= 4.5 ==0. 
@@ -913,103 +954,79 @@ plusb <- data.frame(apply(plus,2,function(x) binarise(x)))
 ```
 
 
+### Proportion screams data
 
-#### Set up procedure to create and sync models.
-
-This directs to my local machine here ***/Users/kirstin/Dropbox/SGDP/FLARe/FLARe_MASTER/Projects/Hierachal_modelling/Scripts*** and is remotely linked to the github [repository here](https://github.com/klpurves/FLARe_Bayesian_hierarchical).  
-
-##### Make sure the most up to date stan file is in the remote repo
-
-
-```{bash}
-
-git pull Bayes_modelling
-   
-```
-
-##### check existing paramters
-
-Unhash this if you want to check what the model looks like within the notebook.
-
-```{bash}
-stanname="punish_only.stan"
-scriptdir="/Users/kirstin/Dropbox/SGDP/FLARe/FLARe_MASTER/Projects/Hierachal_modelling/Scripts"
-
-#cat $scriptdir/$stanname
-
-```
-
-
-##### Make any changes
-
-use echo to push these to the new file if you want to make changes from here. 
-
-```{bash} 
-
-## initialise bash directory and filename
-
-stanname="punish_only.stan"
-scriptdir="/Users/kirstin/Dropbox/SGDP/FLARe/FLARe_MASTER/Projects/Hierachal_modelling/Scripts"
-
-
-#echo "<any changes here>" > $scriptdir/$stanname
-
-```
-
-
-#### Now try run stan
-
-unhash this to run experimental script that checked if stan runs. This was mostly to check data formatting and installation / compilation etc.
-
+This is a vector containing the absolute number of trials where no scream occurred for each stimulus. As there was a 75% reinforcement rate for the CS+ (9/12 trials), this is a vector of '3's. For the CS-, no trials were reinforced so is a vector of '12's
 
 ```{r}
 
-flare_data<-list(ntrials=ntrials,nsub=nsub,includeTrial = rep(1,ntrials), screamPlus=t(screamPlus),screamMinus=t(screamMinus),
-                 ratingPlus=t(plusb),ratingMinus=t(minusb))
-
-#flare_fit <- stan(file = stanfile, data = flare_data, iter=chain_iter, chains = chain_n) #add working dir?
-
-#save(flare_fit, file=file.path(datadir,'flare_fit_test'))
-
-#traceplot(flare_fit,'lp__')
-
-# extract fit data
-#summary_flare<- summary(flare_fit)
-
-# extract model summary data
-
-#flare_loglike<- extract_log_lik(flare_fit, parameter_name = "loglik", merge_chains = TRUE)
-
-
+No_scream_p <- rep(3,nsub)
+No_scream_m <- rep(12,nsub)
 
 ```
 
-view the fit information
+### Scream per trial data
 
+Create datasets for the acquisition CS- and extinction CS+ and CS- reflecting that no screams occurred at all. Then use the pattern id variable to create a dataset for the acquisition CS+ indicating when a scream occurred for each participant.
 ```{r}
 
-#summary_flare
+
+## Create the no scream daatsets for all
+screamMinus <- matrix(0L,nrow=nsub, ncol=ntrials)
+
+library(data.table)
+
+## read in the screams for acquisition 
+screamPlus <- fread("/Users/kirstin/Dropbox/SGDP/FLARe/FLARe_MASTER/Projects/LatentGrowth/Datasets/bayes_screams_acq.csv",data.table=F)
+
+
+# 
+# ### for the time being, simulate the NA data for the studies where I havent yet finished cleaning the screams.
+# 
+# # make the first trial 1 for everyone, then add 8 additional random 1's per person. Do this in four random patterns to mimic the real data
+# 
+# sc1 <- c(1,1,0,1,0,0,1,1,1,1,1)
+# sc2 <- c(0,1,1,1,0,0,1,1,1,1,1)
+# sc3 <- c(1,1,1,0,1,0,1,0,1,1,1)
+# sc4 <- c(1,0,1,1,0,0,1,1,1,1,1)
+# 
+# 
+# screamPlus[,1] <- ifelse(is.na(screamPlus[,1]),1,screamPlus[,1])
+# 
+# # for (n in 1:dim(screamPlus)[1]) {
+# #   print(n)
+# #   screamPlus[n,2:12] <- sample(patts,1,replace=T)
+# # }
+# 
+# for (n in 1:dim(screamPlus)[1]) {
+#   
+#   a <- sample(c(1,4),1)
+#   
+#   if (is.na(screamPlus[n,2])){
+#     if (a == 1) {
+#       screamPlus[n,2:12] <- sc1
+#     } else if (a == 2) {
+#       screamPlus[n,2:12] <- sc2
+#     } else if (a == 3){
+#       screamPlus[n,2:12] <- sc3
+#     } else {
+#       screamPlus[n,2:12] <- sc4
+#     }
+#   }
+# }
 
 ```
-extract the loglikelihood using loo
+
+
+
+## Create dataset for barplot comparing output
 
 ```{r}
+library(ggplot2)
 
-#loo(flare_loglike)
+mod_comp <- data.frame(model=NA,BIC=NA)
 
 ```
-
-so, good news is this all works. So preliminary check a success. Next need to consider the appropriate model. 
-
-
-## Create stan friendly datasets
-
-### notes
-
-We need to rescale our dataset here to be between 0 and 1. 
-
-Importantly, because we are using the proportion of trials that **are not** reinforced as a known paramter for statistical reasons (we don't want a proportion of .75 and 1, better to have .25 and 0), we have made our rescaled expectancy values as 1 - rescaled(x). This means that we will still be able to interpret the results in the expected way (i.e. higher rating is greater expectation of the outcome).
-
 
 ### rescale data
 
@@ -1083,74 +1100,64 @@ cdf_scale <- 1/18
 
 ```
 
-### create proportion screams data
 
-This is a vector containing the absolute number of trials where no scream occurred for each stimulus. As there was a 75% reinforcement rate for the CS+ (9/12 trials), this is a vector of '3's. For the CS-, no trials were reinforced so is a vector of '12's
-
-```{r}
-
-No_scream_p <- rep(3,nsub)
-No_scream_m <- rep(12,nsub)
-
-```
-
-#### Create scream data
-
-Create datasets for the acquisition CS- and extinction CS+ and CS- reflecting that no screams occurred at all. Then use the pattern id variable to create a dataset for the acquisition CS+ indicating when a scream occurred for each participant.
-
-```{r}
+## Set up stan 
 
 
-## Create the no scream daatsets for all
-screamMinus <- matrix(0L,nrow=nsub, ncol=ntrials)
+These use Alex Pikes RStan script with minor modification to make it punishment only to see if it runs. Testing that the approach works with the current data set up etc.  
 
-library(data.table)
-
-## read in the screams for acquisition 
-screamPlus <- fread("/Users/kirstin/Dropbox/SGDP/FLARe/FLARe_MASTER/Projects/LatentGrowth/Datasets/bayes_screams_acq.csv",data.table=F)
-
-### for the time being, simulate the NA data for the studies where I havent yet finished cleaning the screams.
-
-# make the first trial 1 for everyone, then add 8 additional random 1's per person. Do this in four random patterns to mimic the real data
-
-sc1 <- c(1,1,0,1,0,0,1,1,1,1,1)
-sc2 <- c(0,1,1,1,0,0,1,1,1,1,1)
-sc3 <- c(1,1,1,0,1,0,1,0,1,1,1)
-sc4 <- c(1,0,1,1,0,0,1,1,1,1,1)
+The settings for the script are below, including stan chain parameters and directory set up.
 
 
-screamPlus[,1] <- ifelse(is.na(screamPlus[,1]),1,screamPlus[,1])
 
-# for (n in 1:dim(screamPlus)[1]) {
-#   print(n)
-#   screamPlus[n,2:12] <- sample(patts,1,replace=T)
-# }
+This loads the libraries and source files needed to run this script, and sets up RStan
 
-for (n in 1:dim(screamPlus)[1]) {
-  
-  a <- sample(c(1,4),1)
-  
-  if (is.na(screamPlus[n,2])){
-    if (a == 1) {
-      screamPlus[n,2:12] <- sc1
-    } else if (a == 2) {
-      screamPlus[n,2:12] <- sc2
-    } else if (a == 3){
-      screamPlus[n,2:12] <- sc3
-    } else {
-      screamPlus[n,2:12] <- sc4
-    }
-  }
-}
+```{r, echo = F,results='hide',message=F}
+
+# libraries and source files 
+library('MASS')
+library('boot')
+library('dplyr')
+library('reshape')
+library('tidyr')
+library('rstan') 
+library('loo')    # this is model comparison package. helps extract loglikelihood too.
+library('data.table')
+
+#options for RSTAN
+options(mc.cores = parallel::detectCores())
+rstan_options(auto_write = TRUE)
+Sys.setenv(LOCAL_CPPFLAGS = '-march=native')
+Sys.getenv('LOCAL_CPPFLAGS') #should say '-march=native'
+
+#functions (if and when relevant and added)
+# source('/Users/kirstin/Dropbox/SGDP/Function_library/<<function script name>>')
+source('/Users/kirstin/Dropbox/SGDP/Function_library/not_in.R') # Not in %!in% function
 
 ```
 
-## Create dataset for barplot comparing output
+## Stan data
 
-```{r}
-library(ggplot2)
+```{r stan data}
 
-mod_comp <- data.frame(model=NA,BIC=NA)
+## Test data (Pilot + TRT + Validation) proportion no screams
+
+
+#data
+data_files<-list(ntrials=ntrials,nsub=nsub,nothingPlus = No_scream_p, nothingMinus=No_scream_m,ratingsPlus=plus_scaled,ratingsMinus=minus_scaled)
+
+
+## Test data (Pilot + TRT + Validation) proportion screams, no log likelihood
+
+flare_data_nolog <-list(ntrials=ntrials,nsub=nsub,screamPlus = t(screamPlus), screamMinus= t(screamMinus),ratingsPlus=t(plus_scaled),ratingsMinus=t(minus_scaled))
+
+## Test data (Pilot + TRT + Validation) proportion screams, no log likelihood
+flare_data<-list(ntrials=ntrials,nsub=nsub,screamPlus = t(screamPlus), screamMinus=t(screamMinus),ratingsPlus=t(plus_scaled),ratingsMinus=t(minus_scaled),cdf_scale=cdf_scale)
+
+
+## Validation data (TEDS) scaled 
+# 
+# TEDS_data<-list(ntrials=ntrials,nsub=nsub,screamPlus = t(screamPlus), screamMinus= t(screamMinus),ratingsPlus=t(plus_scaled),ratingsMinus=t(minus_scaled))
 
 ```
 
@@ -1160,7 +1167,7 @@ mod_comp <- data.frame(model=NA,BIC=NA)
 
 ### notes
 
-Because we use the 1-rescaled expectancy data, no need to try and invert to reinforcement paramters here. As a result we need the stan model to simply be:   
+Because we use the 1-rescaled expectancy data, no need to try and invert to reinforcement parameters here. As a result we need the stan model to simply be:   
 
 ```
 alphaPlus[p] =  nothingPlus[p]/ntrials;
@@ -1169,7 +1176,7 @@ alphaMinus[p] =  nothingMinus[p]/ntrials;
 
 ### run Alex Pike's stan script for non scaled beta model.
 
-here we try to estimate the alpha paramter of the beta distribution per trial per person per stimulus. (i.e. you have two sufficient paramters for each beta dist, the alpha and beta. we want to estimate the alpha - ). 
+here we try to estimate the alpha parameter of the beta distribution per trial per person per stimulus. (i.e. you have two sufficient parameters for each beta dist, the alpha and beta. we want to estimate the alpha - ). 
 
 Eventually we will scale these by the actual 'value' of the scream for each person per trial. 
 
@@ -1177,38 +1184,29 @@ Using data loaded in from preliminary tests above.
 
 so this is a beta value per person (assuming the underlying process for the plus and minus are the same)
 
-```{r}
-## decide testing rate (min,med,max or off)
-testing('min')
+### Model
 
-## set up run
+```{r no scaling set up}
+#script
 stanname='beta_noscaling.stan'
 
-stanfile <- file.path(scriptdir, stanname)
+#data
+data_files<-list(ntrials=ntrials,nsub=nsub,nothingPlus = No_scream_p, nothingMinus=No_scream_m,ratingsPlus=plus_scaled,ratingsMinus=minus_scaled)
 
-flare_data<-list(ntrials=ntrials,nsub=nsub,nothingPlus = No_scream_p, nothingMinus=No_scream_m,ratingsPlus=plus_scaled,ratingsMinus=minus_scaled)
+```
 
-flare_fit <- stan(file = stanfile, data = flare_data, iter=chain_iter, chains = chain_n) #add working dir?
+```{r beta no scaling}
 
-save(flare_fit, file=file.path(datadir,'flare_fit_test'))
+flare_fit <- model_run('load','beta_noscaling.stan',data_files)
 
-traceplot(flare_fit,'lp__')
+## get some basic output descriptions printed to screen
+out_describe(flare_fit,nsub)
 
 # extract fit data
-summary_flare<- summary(flare_fit)
-
-# extract model summary data
-
-#flare_loglike<- extract_log_lik(flare_fit, parameter_name = "loglik", merge_chains = TRUE)
+summary_flare <- summary(flare_fit)
 
 ```
 
-```{r}
-## get some basic output descriptions printed to screen
-
-out_describe(summary_flare,342)
-
-```
 
 ## Model 2: single beta scaled {.tabset}
 
@@ -1218,7 +1216,7 @@ Simple alteration of the first model. We estimate a scaling parameter per person
 
 ### run Alex Pike's stan script for scaled beta model.
 
-here we try to estimate the alpha paramter of the beta distribution per trial per person per stimulus. (i.e. you have two sufficient paramters for each beta dist, the alpha and beta. we want to estimate the alpha - ). 
+here we try to estimate the alpha parameter of the beta distribution per trial per person per stimulus. (i.e. you have two sufficient parameters for each beta dist, the alpha and beta. we want to estimate the alpha - ). 
 
 Eventually we will scale these by the actual 'value' of the scream for each person per trial. 
 
@@ -1226,79 +1224,54 @@ Using data loaded in from preliminary tests above.
 
 so this is a beta value per person (assuming the underlying process for the plus and minus are the same)
 
-```{r}
-## decide testing rate (min,med,max or off)
-testing('min')
+### Model
 
-## set up run
+```{r scaled  set up,echo=F}
+
+#script
 stanname='beta_scaling.stan'
 
-stanfile <- file.path(scriptdir, stanname)
-
-flare_data<-list(ntrials=ntrials,nsub=nsub,nothingPlus = No_scream_p, nothingMinus=No_scream_m,ratingsPlus=plus_scaled,ratingsMinus=minus_scaled)
-
-flare_fit <- stan(file = stanfile, data = flare_data, iter=chain_iter, chains = chain_n) #add working dir?
-
-save(flare_fit, file=file.path(datadir,'flare_fit_test'))
-
-traceplot(flare_fit,'lp__')
-
-# extract fit data
-summary_flare<- summary(flare_fit)
-
-# extract model summary data
-
-#flare_loglike<- extract_log_lik(flare_fit, parameter_name = "loglik", merge_chains = TRUE)
-
 ```
 
-```{r}
+```{r beta scaled}
+
+flare_fit <- model_run('load',stanname,data_files)
+
 ## get some basic output descriptions printed to screen
-
-out_describe(summary_flare,342)
-
-```
-
-### run Alex Pike's stan script for scaled beta model.
-
-here we try to estimate the alpha paramter of the beta distribution per trial per person per stimulus. (i.e. you have two sufficient paramters for each beta dist, the alpha and beta. we want to estimate the alpha - ). 
-
-Eventually we will scale these by the actual 'value' of the scream for each person per trial. 
-
-Using data loaded in from preliminary tests above.
-
-so this is a beta value per person (assuming the underlying process for the plus and minus are the same)
-
-```{r}
-## decide testing rate (min,med,max or off)
-testing('min')
-
-## set up run
-stanname='beta_withRL.stan'
-
-stanfile <- file.path(scriptdir, stanname)
-
-flare_data<-list(ntrials=ntrials,nsub=nsub,screamPlus = t(screamPlus), screamMinus= t(screamMinus),ratingsPlus=t(plus_scaled),ratingsMinus=t(minus_scaled))
-
-flare_fit <- stan(file = stanfile, data = flare_data, iter=chain_iter, chains = chain_n) #add working dir?
-
-save(flare_fit, file=file.path(datadir,'flare_fit_test'))
-
-traceplot(flare_fit,'lp__')
+out_describe(flare_fit,nsub)
 
 # extract fit data
 summary_flare <- summary(flare_fit)
 
-# extract model summary data
+```
 
-#flare_loglike<- extract_log_lik(flare_fit, parameter_name = "loglik", merge_chains = TRUE)
+
+### run Alex Pike's stan script for scaled beta model.
+
+here we try to estimate the alpha parameter of the beta distribution per trial per person per stimulus. (i.e. you have two sufficient parameters for each beta dist, the alpha and beta. we want to estimate the alpha - ). 
+
+Eventually we will scale these by the actual 'value' of the scream for each person per trial. 
+
+Using data loaded in from preliminary tests above.
+
+so this is a beta value per person (assuming the underlying process for the plus and minus are the same)
+
+
+```{r beta RL set up}
+#script
+stanname='beta_withRL.stan'
 
 ```
 
-```{r}
-## get some basic output descriptions printed to screen
+```{r beta RL}
 
-out_describe(summary_flare,342)
+flare_fit <- model_run('load',stanname,flare_data_nolog)
+
+## get some basic output descriptions printed to screen
+out_describe(flare_fit,nsub)
+
+# extract fit data
+summary_flare <- summary(flare_fit)
 
 ```
 
@@ -1314,7 +1287,7 @@ this model includes an alpha learning paramater per person estimating their lear
 
 this model includes an alpha learning paramater per person estimating their learning rate and updating based on it. This model needs a dataset that indicates whether a scream occurred for each trial instead of the proportion of times no scream occurred.
 
-Alex used this [stack post](https://stats.stackexchange.com/questions/12232/calculating-the-parameters-of-a-beta-distribution-using-the-mean-and-variance) to help solve the shape paramters using mean and sd where we assume that v serves as the mean and beta as the sd.
+Alex used this [stack post](https://stats.stackexchange.com/questions/12232/calculating-the-parameters-of-a-beta-distribution-using-the-mean-and-variance) to help solve the shape parameters using mean and sd where we assume that v serves as the mean and beta as the sd.
 
 the equations work out to this:
 
@@ -1326,41 +1299,29 @@ $$\alpha = \left(\frac{1-\mu}{\sigma^2} - \frac{1}{\mu}\right)\mu^2$$
 for shape 2: 
 
 $$\beta=\alpha \left(\frac{1}{\mu}-1\right)$$
+### Model
 
-Hashed this out as it doesnt run!
+this way of defining the mean does not work or even run, so skipping it.
 
-```{r}
-# ## decide testing rate (min,med,max or off)
-# testing('min')
-# 
-# ## set up run
-# stanname='beta_meansd_RL.stan'
-# 
-# stanfile <- file.path(scriptdir, stanname)
-# 
-# flare_data<-list(ntrials=ntrials,nsub=nsub,screamPlus = t(screamPlus), screamMinus=t(screamMinus),ratingsPlus=t(plus_scaled),ratingsMinus=t(minus_scaled))
-# 
-# flare_fit <- stan(file = stanfile, data = flare_data, iter=chain_iter, chains = chain_n) #add working dir?
-# 
-# save(flare_fit, file=file.path(datadir,'flare_fit_test'))
-# 
-# traceplot(flare_fit,'lp__')
-# 
-# # extract fit data
-# summary_flare<- summary(flare_fit)
-# 
-# # extract model summary data
-# 
-# #flare_loglike<- extract_log_lik(flare_fit, parameter_name = "loglik", merge_chains = TRUE)
+```{r mean 1 set up}
+#script
+stanname='beta_meansd_RL.stan'
 
 ```
 
-```{r}
+
+```{r mean 1}
+
+flare_fit <- model_run('skip',stanname,flare_data_nolog)
+
 ## get some basic output descriptions printed to screen
+out_describe(flare_fit,nsub)
 
-# out_describe(summary_flare,342)
+# extract fit data
+summary_flare <- summary(flare_fit)
 
 ```
+
 
 On 500 iterations (i.e. test) the variance in alpha is good, but the traceplot is terrible. Model coverges very poorly. We also have to constrain the beta to be betwqeen 0 and 0.0001. Not sure why this is. 
 
@@ -1385,43 +1346,31 @@ for parameter b:
 
 $$\beta = \mu(1-\mu)^2/\sigma+\mu-1$$
 
+### Model
+
 Still using a single beta here.
 
+skipping as it also does not run
 
-hashed this out as it doesnt run (saves time)
-
-```{r}
-# ## decide testing rate (min,med,max or off)
-# testing('min')
-# 
-# ## set up run
-# stanname='beta_meansd_RL_2.stan'
-# 
-# stanfile <- file.path(scriptdir, stanname)
-# 
-# flare_data<-list(ntrials=ntrials,nsub=nsub,screamPlus = t(screamPlus), screamMinus=t(screamMinus),ratingsPlus=t(plus_scaled),ratingsMinus=t(minus_scaled))
-# 
-# flare_fit <- stan(file = stanfile, data = flare_data, iter=chain_iter, chains = chain_n) #add working dir?
-# 
-# save(flare_fit, file=file.path(datadir,'flare_fit_test'))
-# 
-# traceplot(flare_fit,'lp__')
-# 
-# # extract fit data
-# summary_flare<- summary(flare_fit)
-# 
-# # extract model summary data
-
-#flare_loglike<- extract_log_lik(flare_fit, parameter_name = "loglik", merge_chains = TRUE)
+```{r mean 2 set up}
+#script
+stanname='beta_meansd_RL_2.stan'
 
 ```
 
-```{r}
+
+```{r mean 2}
+
+flare_fit <- model_run('skip',stanname,flare_data_nolog)
+
 ## get some basic output descriptions printed to screen
+out_describe(flare_fit,nsub)
 
-# out_describe(summary_flare,342)
+# extract fit data
+summary_flare <- summary(flare_fit)
 
 ```
+
 
 ### Mean definition 3
 
@@ -1436,7 +1385,7 @@ to
 $$\alpha = \left(\frac{1-\mu}{\sigma} - \frac{1}{\mu}\right)\mu^2$$
 
 
-Changes the shape 2 paramter definition from:
+Changes the shape 2 parameter definition from:
 
 $$\beta=\alpha \left(\frac{1}{\mu}-1\right)$$   
 
@@ -1445,136 +1394,85 @@ to
 
 $$\beta = \left(\frac{1-\mu}{\sigma} - \frac{1}{\mu}\right)\mu\left(1-\mu\right)$$
 
-Because this works best, will add loglikelihhod calculation here. Basing this on the probability density function for the beta distribution given the participants actual ratings and sufficient paramters of the distribution per trial.
+Because this works best, will add loglikelihhod calculation here. Basing this on the probability density function for the beta distribution given the participants actual ratings and sufficient parameters of the distribution per trial.
 
 >>>loglik[p] =  loglik[p] +
          beta_lpdf(ratingsPlus[t,p]|shape1_Plus[t,p],shape2_Plus[t,p]) +
          beta_lpdf(ratingsMinus[t,p]|shape1_Minus[t,p],shape2_Minus[t,p])
          
          
+### Model
          
-Hashed this out as it doesnt run (saves time)
+Skip as this definition also does not work or run
 
-```{r}
-## decide testing rate (min,med,max or off)
-# testing('min')
-# 
-# ## set up run
-# stanname='beta_meansd_RL_3.stan'
-# 
-# stanfile <- file.path(scriptdir, stanname)
-# 
-# flare_data<-list(ntrials=ntrials,nsub=nsub,screamPlus = t(screamPlus), screamMinus=t(screamMinus),ratingsPlus=t(plus_scaled),ratingsMinus=t(minus_scaled))
-# 
-# flare_fit <- stan(file = stanfile, data = flare_data, iter=chain_iter, chains = chain_n) #add working dir?
-# 
-# save(flare_fit, file=file.path(datadir,'flare_fit_test'))
-# 
-# traceplot(flare_fit,'lp__')
-# 
-# # extract fit data
-# summary_flare<- summary(flare_fit)
-# 
-# # extract model summary data
-# 
-# flare_loglike<- extract_log_lik(flare_fit, parameter_name = "loglik", merge_chains = TRUE)
+
+```{r mean 3 set up}
+#script
+stanname='beta_meansd_RL_3.stan'
 
 ```
 
-```{r}
+
+```{r mean 3}
+
+flare_fit <- model_run('skip',stanname,flare_data_nolog)
+
 ## get some basic output descriptions printed to screen
+out_describe(flare_fit,nsub)
 
-# out_describe(summary_flare,342)
+# extract fit data
+summary_flare <- summary(flare_fit)
 
 ```
+
 
 This model is substnatially better than either of the other two. Traceplot suggests that the iterations converge as we would like. However, we still need to massively constrain the beta (i.e. confidence / uncertainty) estimates for it to run, otherwise the starting values drop below zero. 
 
-#### Create BIC from log likelihood
-
-```{r}
-## extract log likelihood
-# 
-# flare_loglike <- extract_log_lik(flare_fit, parameter_name = "loglik", merge_chains = TRUE)
-# 
-# #calculate BIC
-# 
-# FLARe_bic<-bic(ntrials,-colMeans(flare_loglike),2) #number of parameters in that model e.g. 4)
-# 
-# ## mean BIC as model comparisons tool:
-# 
-# print("Mean Bayesian information criterion for model")
-# mean(FLARe_bic)
-
-```
-
-
-#### Add to bar plot
-
-```{r}
-
-# mod_comp <- rbind(mod_comp,c("Means 1 beta",as.numeric(mean(FLARe_bic))))
-# 
-# mod_comp$BIC <- odp(as.numeric(mod_comp$BIC))
-# 
-# mod_comp <- as.data.frame(na.omit(mod_comp))
-# 
-# plot_models(mod_comp)
-```
 
 ### Mean definition 4
 
-Here I try to define the parameter using simplified mean and precision estimates as per [this tutorial](http://quantdevel.com/public/CSP2017/ModelingProportionsAndProbabilities.pdf). See in particular the paramter estimation on the cubs data.
+Here I try to define the parameter using simplified mean and precision estimates as per [this tutorial](http://quantdevel.com/public/CSP2017/ModelingProportionsAndProbabilities.pdf). See in particular the parameter estimation on the cubs data.
 
 
-This results in a relatively simplified paramter estimation compared to model 3. 
+This results in a relatively simplified parameter estimation compared to model 3. 
 
 $$\alpha = \mu * ((\mu * (1-\mu)) / \sigma - 1)$$
 
-where mu is the mean (or value) and sigma is the variance / uncertainty paramter we currently call beta.
+where mu is the mean (or value) and sigma is the variance / uncertainty parameter we currently call beta.
 
 and the b (or shape 2) parameter for the distribution is:
 
 $$\beta = (1- \mu) * ((\mu * (1-\mu)) / \sigma - 1)$$
 
+### Model
 
-
-
-```{r}
-## decide testing rate (min,med,max or off)
-testing('min')
-
-## set up run
+```{r mean 4 set up}
+#script
 stanname='beta_meansd_RL_4.stan'
 
-stanfile <- file.path(scriptdir, stanname)
+```
 
-flare_data<-list(ntrials=ntrials,nsub=nsub,screamPlus = t(screamPlus), screamMinus=t(screamMinus),ratingsPlus=t(plus_scaled),ratingsMinus=t(minus_scaled),cdf_scale=cdf_scale)
 
-flare_fit_best <- stan(file = stanfile, data = flare_data, iter=chain_iter, chains = chain_n) #add working dir?
+```{r mean 4}
 
-save(flare_fit_best, file=file.path(datadir,'flare_fit_simpleMean'))
+flare_fit <- model_run('load',stanname,flare_data)
 
-traceplot(flare_fit_best,'lp__')
+## get some basic output descriptions printed to screen
+out_describe(flare_fit,nsub)
 
 # extract fit data
-summary_flare_best <- summary(flare_fit_best)
+summary_flare <- summary(flare_fit)
 
 ```
 
-```{r}
-## get some basic output descriptions printed to screen
 
-out_describe(summary_flare_best,342)
-
-```
 
 #### Create BIC from log likelihood
 
 ```{r}
 ## extract log likelihood
 
-flare_loglike_best <- extract_log_lik(flare_fit_best, parameter_name = "loglik", merge_chains = TRUE)
+flare_loglike <- extract_log_lik(flare_fit, parameter_name = "loglik", merge_chains = TRUE)
 
 #calculate BIC
 
@@ -1597,7 +1495,6 @@ mod_comp <- rbind(mod_comp,c("Means 1 beta",as.numeric(mean(FLARe_bic))))
 mod_comp$BIC <- odp(as.numeric(mod_comp$BIC))
 
 mod_comp <- as.data.frame(na.omit(mod_comp))
-
 
 ## plot function - create plot
 plot_models(mod_comp)
@@ -1623,38 +1520,26 @@ b = (1-mode) * (k-2) + 1
 
 For this version we try and estimate the 'mode' to be shape 1. KIRSTIN:: explain here
 
-```{r}
-## decide testing rate (min,med,max or off)
-# 
-# testing('skip')
-# 
-# ## set up run
-# 
-# stanname='beta_mode_RL.stan'
-# 
-# stanfile <- file.path(scriptdir, stanname)
-# 
-# flare_data<-list(ntrials=ntrials,nsub=nsub,screamPlus = t(screamPlus), screamMinus=t(screamMinus),ratingsPlus=t(plus_scaled),ratingsMinus=t(minus_scaled))
-# 
-# flare_fit <- stan(file = stanfile, data = flare_data, iter=chain_iter, chains = chain_n) #add working dir?
-# 
-# save(flare_fit, file=file.path(datadir,'flare_fit_simpleMode'))
-# 
-# traceplot(flare_fit,'lp__')
-# 
-# # extract fit data
-# summary_flare<- summary(flare_fit)
-# 
-# # extract model summary data
-# 
-# #flare_loglike<- extract_log_lik(flare_fit, parameter_name = "loglik", merge_chains = TRUE)
+### Model
+
+doesnt work, so skip this first attempt
+
+```{r mode 1 set up}
+#script
+stanname='beta_mode_RL.stan'
 
 ```
 
-```{r}
-## get some basic output descriptions printed to screen
 
-# out_describe(summary_flare,342)
+```{r mode 1}
+
+flare_fit <- model_run('skip',stanname,flare_data_nolog)
+
+## get some basic output descriptions printed to screen
+out_describe(flare_fit,nsub)
+
+# extract fit data
+summary_flare <- summary(flare_fit)
 
 ```
 
@@ -1665,41 +1550,32 @@ For this version we assume that V is the mode (above we assumed it serves as the
 What this does is basically treat the expected rating (value) as the a parameter for the distribution (scaled by their certainity - beta) and 1-that value as the b parameter (again, scaled by the uncertainty). 
 
 so you have a ratio of their selected value per trial (mode across iterations?) to how far from the highest possible choice they are.
-```{r}
 
-## decide testing rate (min,med,max or off)
-testing('min')
+### Model
 
-## set up run
+```{r mode 2 set up}
+#script
 stanname='beta_mode_RL_2.stan'
 
-stanfile <- file.path(scriptdir, stanname)
+```
 
-flare_data<-list(ntrials=ntrials,nsub=nsub,screamPlus = t(screamPlus), screamMinus=t(screamMinus),ratingsPlus=t(plus_scaled),ratingsMinus=t(minus_scaled),cdf_scale=cdf_scale)
 
-flare_fit <- stan(file = stanfile, data = flare_data, iter=chain_iter, chains = chain_n) #add working dir?
+```{r mode 2}
 
-save(flare_fit, file=file.path(datadir,'flare_fit_test'))
+flare_fit <- model_run('med',stanname,flare_data)
 
-traceplot(flare_fit,'lp__')
+## get some basic output descriptions printed to screen
+out_describe(flare_fit,nsub)
 
 # extract fit data
-summary_flare<- summary(flare_fit)
-
-
-```
-
-```{r}
-## get some basic output descriptions printed to screen
-
-out_describe(summary_flare,342)
+summary_flare <- summary(flare_fit)
 
 ```
 
 
-This works, but there is not a lot of variance in the alpha paramter when described by mode mean 0.49; sd = 0.06. Compared to defined by mean where mean is 0.54 and sd is 0.26.
+This works, but there is not a lot of variance in the alpha parameter when described by mode mean 0.49; sd = 0.06. Compared to defined by mean where mean is 0.54 and sd is 0.26.
 
-However there is a lot of variation in the beta paramter (mean -7.21, sd = 134.74)
+However there is a lot of variation in the beta parameter (mean -7.21, sd = 134.74)
 
 #### Create BIC from log likelihood
 
@@ -1735,44 +1611,36 @@ mod_comp <- as.data.frame(na.omit(mod_comp))
 plot_models(mod_comp)
 
 ```
+
+
 ## Model 5: RL mean defined,two beta {.tabset}
 
-### mean sd RL model with beta per stimulus
+### Model
 
 RL model adding a beta per stimulus to Alex's model
 
-```{r}
-## decide testing rate (min,med,max or off)
-testing('min')
-
-## set up run
+```{r mean 2 beta set up}
+#script
 stanname='beta_meansd_2beta_RL.stan'
-
-stanfile <- file.path(scriptdir, stanname)
-
-flare_data<-list(ntrials=ntrials,nsub=nsub,screamPlus = t(screamPlus), screamMinus= t(screamMinus),ratingsPlus=t(plus_scaled),ratingsMinus=t(minus_scaled),cdf_scale=cdf_scale)
-
-flare_fit_m2 <- stan(file = stanfile, data = flare_data, iter=chain_iter,warmup = warm_up, chains = chain_n) #add working dir?
-
-save(flare_fit_m2, file=file.path(datadir,'flare_fit_2betaMean'))
-
-traceplot(flare_fit_m2,'lp__')
-
-# extract fit data
-summary_flare_m2 <- summary(flare_fit_m2)
 
 ```
 
-```{r}
-## get some basic output descriptions printed to screen
 
-out_describe(summary_flare_m2,342)
+```{r mean 2 beta}
+
+flare_fit <- model_run('full',stanname,flare_data)
+
+## get some basic output descriptions printed to screen
+out_describe(flare_fit,nsub)
+
+# extract fit data
+summary_flare <- summary(flare_fit)
 
 ```
 
 #### Create BIC from log likelihood
 
-```{r}
+```{r mean 2 beta bic}
 ## extract log likelihood
 
 flare_loglike_m2 <- extract_log_lik(flare_fit_m2, parameter_name = "loglik", merge_chains = TRUE)
@@ -1805,43 +1673,29 @@ plot_models(mod_comp)
 
 ```
 
+
 ## Model 6: RL mode defined,two beta {.tabset}
 
-### mode sd RL model with beta per stimulus
-
+### Model
 RL model adding a beta per stimuli to model defining the beta shape using the mode instead of the mean. This definitely makes more sense as we assume that they will have different levels of uncertainty about each. 
 
-```{r}
-## decide testing rate (min,med,max or off)
-testing('min')
 
-## set up run
+```{r mode 2 beta set up}
+#script
 stanname='beta_mode_2beta_RL_2.stan'
-
-stanfile <- file.path(scriptdir, stanname)
-
-flare_data<-list(ntrials=ntrials,nsub=nsub,screamPlus = t(screamPlus), screamMinus= t(screamMinus),ratingsPlus=t(plus_scaled),ratingsMinus=t(minus_scaled))
-
-flare_fit <- stan(file = stanfile, data = flare_data, iter=chain_iter, chains = chain_n) #add working dir?
-
-save(flare_fit, file=file.path(datadir,'flare_fit_test'))
-
-traceplot(flare_fit,'lp__')
-
-# extract fit data
-summary_flare <- summary(flare_fit)
-
-# extract model summary data
-
-#flare_loglike<- extract_log_lik(flare_fit, parameter_name = "loglik", merge_chains = TRUE)
-
 
 ```
 
-```{r}
-## get some basic output descriptions printed to screen
 
-out_describe(summary_flare,342)
+```{r mode 2 beta}
+
+flare_fit <- model_run('full',stanname,flare_data_nolog)
+
+## get some basic output descriptions printed to screen
+out_describe(flare_fit,nsub)
+
+# extract fit data
+summary_flare <- summary(flare_fit)
 
 ```
 
@@ -1885,49 +1739,32 @@ plot_models(mod_comp)
 
 ## Model 7: RL mean defined, no beta {.tabset}
 
-### mean sd RL model with no beta (only alpha)
+### Model
 
-The beta doesnt work as well for the CS+ stimulus, need to check if this paramter adds anything to the model - drop it from our best mean model and see how this changes the fit.
+The beta doesnt work as well for the CS+ stimulus, need to check if this parameter adds anything to the model - drop it from our best mean model and see how this changes the fit.
 
-this takes for ever to run and the logliklihood fails. So no idea if it is good yet - come back to this. ***hashed for now***
+this takes for ever to run and the logliklihood fails. So no idea if it is good yet - come back to this. ***skipped for now***
 
-```{r}
-# 
-# ## decide testing rate (min,med,max or off)
-# testing('min')
-# # try a weakly informative prior
-# #N0w <- normal(0, 100)
-# 
-# 
-# ## set up run
-# stanname='beta_meansd_RL_NoBeta.stan'
-# 
-# stanfile <- file.path(scriptdir, stanname)
-# 
-# flare_data<-list(ntrials=ntrials,nsub=nsub,screamPlus = t(screamPlus), screamMinus= t(screamMinus),ratingsPlus=t(plus_scaled),ratingsMinus=t(minus_scaled))
-# 
-# flare_fit <- stan(file = stanfile, data = flare_data, iter=chain_iter, chains = chain_n) #add working dir?
-# 
-# save(flare_fit, file=file.path(datadir,'flare_fit_test'))
-# 
-# traceplot(flare_fit,'lp__')
-# 
-# # extract fit data
-# summary_flare <- summary(flare_fit,na.rm=T)
-# 
-# # extract model summary data
-# 
-# #flare_loglike<- extract_log_lik(flare_fit, parameter_name = "loglik", merge_chains = TRUE)
 
+```{r mean NO beta set up}
+#script
+stanname='beta_meansd_RL_NoBeta.stan'
 
 ```
 
-```{r}
-# ## get some basic output descriptions printed to screen
-# 
-# out_describe(summary_flare,342)
+
+```{r mean No beta}
+
+flare_fit <- model_run('skip',stanname,flare_data_nolog)
+
+## get some basic output descriptions printed to screen
+out_describe(flare_fit,nsub)
+
+# extract fit data
+summary_flare <- summary(flare_fit)
 
 ```
+
 
 #### Create BIC from log likelihood
 
@@ -1966,9 +1803,9 @@ this takes for ever to run and the logliklihood fails. So no idea if it is good 
 
 # Generate and recover 
 
-Here I test whether the model is working well by seeing if I can use the parameters we've estimated to try and generate our existing rating data and then recover similar paramters again.
+Here I test whether the model is working well by seeing if I can use the parameters we've estimated to try and generate our existing rating data and then recover similar parameters again.
 
-I will do this for the best fitting model (mean defined beta distribution with a variance estimate per person for eahc stimulus) This is the model where we treat the iterarted ratings as if they are 'expected' values and use this as shape 1 paramter for our beta distribution at each trial. We have allowed a beta (or uncertainty) paramter per stimulus.
+I will do this for the best fitting model (mean defined beta distribution with a variance estimate per person for eahc stimulus) This is the model where we treat the iterarted ratings as if they are 'expected' values and use this as shape 1 parameter for our beta distribution at each trial. We have allowed a beta (or uncertainty) parameter per stimulus.
 
 A good model will have **a)** a good correlation between real data and the data generated and **b)** a good correlation between the parameter estimates from the real and generated data.
 
@@ -1981,13 +1818,13 @@ We basically want to replicate our stan script, but inatead of estimating paratm
 ### Generate 
 ##### Make alpha / beta datasets p/p
 
-Use the summary of the stan model to extract the different paramters we want to try to use to recreate our data.
+Use the summary of the stan model to extract the different parameters we want to try to use to recreate our data.
 
 ```{r}
 
 params <- summary(flare_fit_best)
-alpha_est <- data.frame(params$summary[1:342,1])
-beta <- data.frame(params$summary[343:685,1])
+alpha_est <- data.frame(params$summary[1:nsub,1])
+beta <- data.frame(params$summary[(nsub+1):(nsub*2),1])
 
 
 names(beta) <- "beta"
@@ -2001,7 +1838,7 @@ names(beta) <- "beta"
 rating_est_plus <- data.frame(matrix(ncol=ntrials,nrow=nsub))
 rating_est_minus <- data.frame(matrix(ncol=ntrials,nrow=nsub))
 
-# beta shape paramters
+# beta shape parameters
 shape1p <- data.frame(matrix(ncol=ntrials,nrow=nsub))
 shape1m <- data.frame(matrix(ncol=ntrials,nrow=nsub))
 shape2p <- data.frame(matrix(ncol=ntrials,nrow=nsub))
@@ -2024,12 +1861,12 @@ dm <- data.frame(matrix(ncol=(ntrials-1),nrow=nsub))
 
 ##### Simulate ratings
 
-Use our extracted paramters in place of estimating the same. Use the stan syntax
+Use our extracted parameters in place of estimating the same. Use the stan syntax
 
 
 ######  Populate our vplus and delta frames
 
-use the alpha paramters we've extracted (alpha_est)
+use the alpha parameters we've extracted (alpha_est)
 d == delta (precdiction error)
 v == value (i.e. value for each stimulus)
 
@@ -2041,7 +1878,7 @@ for (p in 1:nsub){
       dp[p,t] <- screamPlus[p,t]-vp[p,t]
       dm[p,t] <- screamMinus[p,t]-vm[p,t]
       vp[p,t+1] <- vp[p,t]+alpha_est[p,1]*dp[p,t]
-      vm[p,t+1]<- vm[p,t]+alpha_est[p,1]*dp[p,t]
+      vm[p,t+1]<- vm[p,t]+alpha_est[p,1]*dm[p,t]
     }
 }
 
@@ -2064,7 +1901,7 @@ for (p in 1:nsub){
 
 Use the new v frames and beta parameters.
 
-Shape 1 and 2 are sufficient paramters for the beta distribution
+Shape 1 and 2 are sufficient parameters for the beta distribution
 
 ```{r}
 
@@ -2172,7 +2009,7 @@ apply it to the simulated rating frames.
 
 #### Correlate actual ratings with simulated ratings
 
-use the simulated ratings per person that we have derived using our paramters and see how well they align with the real ratings...
+use the simulated ratings per person that we have derived using our parameters and see how well they align with the real ratings...
 
 Only showing the diaganols from corr.test package here to get the important t1 x t1 etc values.
 
@@ -2197,7 +2034,7 @@ cor(rowMeans(rating_est_plus),rowMeans(plus_scaled))
 
 ### Recover
 
-Here we are seeing if we can recover the same estimates using the simulated ratings. Basically run stan but using the estimated ratings instead of the real ones. See if we get the same alpha / beta paramters.
+Here we are seeing if we can recover the same estimates using the simulated ratings. Basically run stan but using the estimated ratings instead of the real ones. See if we get the same alpha / beta parameters.
 
 We might decide to use the rescaled estimates here to be more comparable...
 
@@ -2205,37 +2042,37 @@ We might decide to use the rescaled estimates here to be more comparable...
 
 RL model adding a beta per stimulus to Alex's model
 
-```{r}
-## decide testing rate (min,med,max or off)
-testing('min')
 
-## set up run
+```{r mean recover set up}
+#script
 stanname='beta_meansd_RL_4.stan'
 
-stanfile <- file.path(scriptdir, stanname)
+# data 
+flare_data_rec <-list(ntrials=ntrials,nsub=nsub,screamPlus = t(screamPlus), screamMinus= t(screamMinus),ratingsPlus=t(rating_est_plus),ratingsMinus=t(rating_est_minus),cdf_scale=cdf_scale)
 
-flare_data<-list(ntrials=ntrials,nsub=nsub,screamPlus = t(screamPlus), screamMinus= t(screamMinus),ratingsPlus=t(rating_est_plus),ratingsMinus=t(rating_est_minus),cdf_scale=cdf_scale)
-
-flare_fit_rec <- stan(file = stanfile, data = flare_data, iter=chain_iter,warmup = warm_up, chains = chain_n) #add working dir?
-
-save(flare_fit_rec, file=file.path(datadir,'flare_fit_2betaMean'))
-
-traceplot(flare_fit_best,'lp__')
-
-# extract fit data
-summary_flare <- summary(flare_fit_rec)
 
 ```
 
+
+```{r mean recover}
+
+flare_fit_rec <- model_run('full',stanname,flare_data_rec)
+
+## get some basic output descriptions printed to screen
+out_describe(flare_fit_rec,nsub)
+
+```
+
+
 #### Make alpha / beta datasets p/p
 
-Use the summary of the stan model to extract the different paramters we want to try to use to recreate our data.
+Use the summary of the stan model to extract the different parameters we want to try to use to recreate our data.
 
 ```{r}
 
 params_rec <- summary(flare_fit_rec)
-alpha_est_rec <- data.frame(params_rec$summary[1:342,1])
-beta_rec <- data.frame(params_rec$summary[343:685])
+alpha_est_rec <- data.frame(params_rec$summary[1:nsub,1])
+beta_rec <- data.frame(params_rec$summary[(nsub+1):(nsub*2)])
 
 names(beta_rec) <- "beta_rec"
 
@@ -2245,7 +2082,7 @@ names(beta_rec) <- "beta_rec"
 
 #### Correlate actual ratings with simulated ratings
 
-use the simulated ratings per person that we have derived using our paramters and see how well they align with the real ratings...
+use the simulated ratings per person that we have derived using our parameters and see how well they align with the real ratings...
 
 Only showing the diaganols from corr.test package here to get the important t1 x t1 etc values.
 
@@ -2266,14 +2103,14 @@ diag(corr.test(beta_rec,beta)$r)
 ### Generate 
 ##### Make alpha / beta datasets p/p
 
-Use the summary of the stan model to extract the different paramters we want to try to use to recreate our data.
+Use the summary of the stan model to extract the different parameters we want to try to use to recreate our data.
 
 ```{r}
 
 params <- summary(flare_fit_m2)
-alpha_est <- data.frame(params$summary[1:342,1])
-beta_plus <- data.frame(matrix(ncol = 1,nrow=342))
-beta_minus <- data.frame(matrix(ncol = 1,nrow=342))
+alpha_est <- data.frame(params$summary[1:nsub,1])
+beta_plus <- data.frame(matrix(ncol = 1,nrow=nsub))
+beta_minus <- data.frame(matrix(ncol = 1,nrow=nsub))
 
 names(beta_plus) <- "beta_plus"
 names(beta_minus) <- "beta_minus"
@@ -2302,7 +2139,7 @@ subm = 0
 rating_est_plus <- data.frame(matrix(ncol=ntrials,nrow=nsub))
 rating_est_minus <- data.frame(matrix(ncol=ntrials,nrow=nsub))
 
-# beta shape paramters
+# beta shape parameters
 shape1p <- data.frame(matrix(ncol=ntrials,nrow=nsub))
 shape1m <- data.frame(matrix(ncol=ntrials,nrow=nsub))
 shape2p <- data.frame(matrix(ncol=ntrials,nrow=nsub))
@@ -2325,12 +2162,12 @@ dm <- data.frame(matrix(ncol=(ntrials-1),nrow=nsub))
 
 ##### Simulate ratings
 
-Use our extracted paramters in place of estimating the same. Use the stan syntax
+Use our extracted parameters in place of estimating the same. Use the stan syntax
 
 
 ######  Populate our vplus and delta frames
 
-use the alpha paramters we've extracted (alpha_est)
+use the alpha parameters we've extracted (alpha_est)
 d == delta (precdiction error)
 v == value (i.e. value for each stimulus)
 
@@ -2342,7 +2179,7 @@ for (p in 1:nsub){
       dp[p,t] <- screamPlus[p,t]-vp[p,t]
       dm[p,t] <- screamMinus[p,t]-vm[p,t]
       vp[p,t+1] <- vp[p,t]+alpha_est[p,1]*dp[p,t]
-      vm[p,t+1]<- vm[p,t]+alpha_est[p,1]*dp[p,t]
+      vm[p,t+1]<- vm[p,t]+alpha_est[p,1]*dm[p,t]
     }
 }
 
@@ -2361,11 +2198,11 @@ for (p in 1:nsub){
 }
 
 
-###### populate beta paramter shape frames
+###### populate beta parameter shape frames
 
 Use the new v frames and beta parameters.
 
-Shape 1 and 2 are sufficient paramters for the beta distribution
+Shape 1 and 2 are sufficient parameters for the beta distribution
 
 ```{r}
 
@@ -2409,7 +2246,7 @@ for (p in 1:nsub){
 
 #### Correlate actual ratings with simulated ratings
 
-use the simulated ratings per person that we have derived using our paramters and see how well they align with the real ratings...
+use the simulated ratings per person that we have derived using our parameters and see how well they align with the real ratings...
 
 Only showing the diaganols from corr.test package here to get the important t1 x t1 etc values.
 
@@ -2433,7 +2270,7 @@ cor(rowMeans(rating_est_plus),rowMeans(plus_scaled))
 
 ### Recover
 
-Here we are seeing if we can recover the same estimates using the simulated ratings. Basically run stan but using the estimated ratings instead of the real ones. See if we get the same alpha / beta paramters.
+Here we are seeing if we can recover the same estimates using the simulated ratings. Basically run stan but using the estimated ratings instead of the real ones. See if we get the same alpha / beta parameters.
 
 #### rescale the estimated ratings
 
@@ -2476,41 +2313,42 @@ Note that when a value had to be imputed as it was missing it will not be an int
 
 #### run stan model
 
-
 RL model adding a beta per stimulus to Alex's model
 
-```{r}
-## decide testing rate (min,med,max or off)
-testing('min')
 
-## set up run
+```{r mean 2 beta recover set up}
+#script
 stanname='beta_meansd_2beta_RL.stan'
 
-stanfile <- file.path(scriptdir, stanname)
+# data 
+flare_data_rec <-list(ntrials=ntrials,nsub=nsub,screamPlus = t(screamPlus), screamMinus= t(screamMinus),ratingsPlus=t(rating_est_plus),ratingsMinus=t(rating_est_minus),cdf_scale=cdf_scale)
 
-flare_data<-list(ntrials=ntrials,nsub=nsub,screamPlus = t(screamPlus), screamMinus= t(screamMinus),ratingsPlus=t(rating_est_plus),ratingsMinus=t(rating_est_minus),cdf_scale=cdf_scale)
 
-flare_fit_rec <- stan(file = stanfile, data = flare_data, iter=chain_iter,warmup = warm_up, chains = chain_n) #add working dir?
-
-save(flare_fit_rec, file=file.path(datadir,'flare_fit_2betaMean'))
-
-traceplot(flare_fit_best,'lp__')
-
-# extract fit data
-summary_flare <- summary(flare_fit_rec)
 
 ```
 
+
+```{r mean 2 beta recover}
+
+flare_fit_rec <- model_run('full',stanname,flare_data_rec)
+
+## get some basic output descriptions printed to screen
+out_describe(flare_fit_rec,nsub)
+
+
+```
+
+
 #### Make alpha / beta datasets p/p
 
-Use the summary of the stan model to extract the different paramters we want to try to use to recreate our data.
+Use the summary of the stan model to extract the different parameters we want to try to use to recreate our data.
 
 ```{r}
 
 params_rec <- summary(flare_fit_rec)
-alpha_est_rec <- data.frame(params_rec$summary[1:342,1])
-beta_plus_rec <- data.frame(matrix(ncol = 1,nrow=342))
-beta_minus_rec <- data.frame(matrix(ncol = 1,nrow=342))
+alpha_est_rec <- data.frame(params_rec$summary[1:nsub,1])
+beta_plus_rec <- data.frame(matrix(ncol = 1,nrow=nsub))
+beta_minus_rec <- data.frame(matrix(ncol = 1,nrow=nsub))
 
 names(beta_plus_rec) <- "beta_plus"
 names(beta_minus_rec) <- "beta_minus"
@@ -2534,7 +2372,7 @@ subm = 0
 
 #### Correlate actual ratings with simulated ratings
 
-use the simulated ratings per person that we have derived using our paramters and see how well they align with the real ratings...
+use the simulated ratings per person that we have derived using our parameters and see how well they align with the real ratings...
 
 Only showing the diaganols from corr.test package here to get the important t1 x t1 etc values.
 
@@ -2554,12 +2392,11 @@ diag(corr.test(beta_minus_rec,beta_minus)$r)
 
 # Expanding on the best base model
 
-
-# Potentially interesting paramters to add to best fit model
+# Potentially interesting parameters to add to best fit model
 
 ## Model 8: Punishment sensitivity 
 
-How aversive they find the scream reinforcement. Modelling this on the loss aversion paramter in [Charpentier et al](https://f1000.com/work/item/6707134/resources/5864774/pdf) (see the last page before references),
+How aversive they find the scream reinforcement. Modelling this on the loss aversion parameter in [Charpentier et al](https://f1000.com/work/item/6707134/resources/5864774/pdf) (see the last page before references),
 
 This will be a single parameter per person, and represents how much the scream influences their ratings. 
 
@@ -2568,42 +2405,27 @@ Based on the paper, will try the following to model this in stan by including it
 
 $$d(stimulus,trial) = scream*\lambda-v(stimulus,trial-1)$$
 
-where $$\lambda = sensitivity\\to\\screams$$ 
+where 
+$$\lambda = sensitivity\\to\\screams$$ 
 
+### Model
 
-
-```{r}
-
-## decide testing rate (min,med,max or off)
-testing('min')
-
-## set up run
+```{r punishment sensitivity set up}
+#script
 stanname='beta_mean1beta_PunSens.stan'
-
-stanfile <- file.path(scriptdir, stanname)
-
-flare_data<-list(ntrials=ntrials,nsub=nsub,screamPlus = t(screamPlus), screamMinus= t(screamMinus),ratingsPlus=t(plus_scaled),ratingsMinus=t(minus_scaled))
-
-flare_fit <- stan(file = stanfile, data = flare_data, iter=chain_iter, chains = chain_n) #add working dir?
-
-save(flare_fit, file=file.path(datadir,'flare_fit_test'))
-
-traceplot(flare_fit,'lp__')
-
-# extract fit data
-summary_flare <- summary(flare_fit)
-
-# extract model summary data
-
-#flare_loglike<- extract_log_lik(flare_fit, parameter_name = "loglik", merge_chains = TRUE)
-
 
 ```
 
-```{r}
-## get some basic output descriptions printed to screen
 
-out_describe(summary_flare,342)
+```{r punishment sensitivity}
+
+flare_fit <- model_run('full',stanname,flare_data)
+
+## get some basic output descriptions printed to screen
+out_describe(flare_fit,nsub)
+
+# extract fit data
+summary_flare <- summary(flare_fit)
 
 ```
 
@@ -2643,17 +2465,18 @@ plot_models(mod_comp)
 
 ```
 
+
 ### Generate
 ##### Make alpha / beta datasets p/p
 
-Use the summary of the stan model to extract the different paramters we want to try to use to recreate our data.
+Use the summary of the stan model to extract the different parameters we want to try to use to recreate our data.
 
 ```{r}
 
 params <- summary(flare_fit)
-alpha_est <- data.frame(params$summary[1:342,1])
-beta <- data.frame(params$summary[343:684,1])
-lambda <- data.frame(params$summary[1027:1368,1])
+alpha_est <- data.frame(params$summary[1:nsub,1])
+beta <- data.frame(params$summary[(nsub+1):(nsub*2),1])
+lambda <- data.frame(params$summary[(nsub*3+1):(nsub*4),1])
 
 names(alpha_est) <- "alpha"
 names(beta) <- "beta"
@@ -2669,7 +2492,7 @@ names(lambda) <- "lambda"
 rating_est_plus <- data.frame(matrix(ncol=ntrials,nrow=nsub))
 rating_est_minus <- data.frame(matrix(ncol=ntrials,nrow=nsub))
 
-# beta shape paramters
+# beta shape parameters
 shape1p <- data.frame(matrix(ncol=ntrials,nrow=nsub))
 shape1m <- data.frame(matrix(ncol=ntrials,nrow=nsub))
 shape2p <- data.frame(matrix(ncol=ntrials,nrow=nsub))
@@ -2694,12 +2517,12 @@ dm <- data.frame(matrix(ncol=(ntrials-1),nrow=nsub))
 
 ##### Simulate ratings
 
-Use our extracted paramters in place of estimating the same. Use the stan syntax
+Use our extracted parameters in place of estimating the same. Use the stan syntax
 
 
 ######  Populate our vplus and delta frames
 
-use the alpha paramters we've extracted (alpha_est)
+use the alpha parameters we've extracted (alpha_est)
 d == delta (precdiction error)
 v == value (i.e. value for each stimulus)
 
@@ -2711,7 +2534,7 @@ for (p in 1:nsub){
       dp[p,t] <- screamPlus[p,t]*lambda[p,]-vp[p,t]
       dm[p,t] <- screamMinus[p,t]*lambda[p,]-vm[p,t]
       vp[p,t+1] <- vp[p,t]+alpha_est[p,1]*dp[p,t]
-      vm[p,t+1]<- vm[p,t]+alpha_est[p,1]*dp[p,t]
+      vm[p,t+1]<- vm[p,t]+alpha_est[p,1]*dm[p,t]
     }
 }
 
@@ -2730,11 +2553,11 @@ for (p in 1:nsub){
 }
 
 
-###### populate beta paramter shape frames
+###### populate beta parameter shape frames
 
 Use the new v frames and beta parameters.
 
-Shape 1 and 2 are sufficient paramters for the beta distribution
+Shape 1 and 2 are sufficient parameters for the beta distribution
 
 ```{r}
 
@@ -2778,7 +2601,7 @@ for (p in 1:nsub){
 
 #### Correlate actual ratings with simulated ratings
 
-use the simulated ratings per person that we have derived using our paramters and see how well they align with the real ratings...
+use the simulated ratings per person that we have derived using our parameters and see how well they align with the real ratings...
 
 Only showing the diaganols from corr.test package here to get the important t1 x t1 etc values.
 
@@ -2802,52 +2625,46 @@ cor(rowMeans(rating_est_plus),rowMeans(plus_scaled))
 
 ### Recover
 
-Here we are seeing if we can recover the same estimates using the simulated ratings. Basically run stan but using the estimated ratings instead of the real ones. See if we get the same alpha / beta paramters.
+Here we are seeing if we can recover the same estimates using the simulated ratings. Basically run stan but using the estimated ratings instead of the real ones. See if we get the same alpha / beta parameters.
 
 #### run stan model
 
-
-RL model adding a beta per stimulus to Alex's model
-
-```{r}
-## decide testing rate (min,med,max or off)
-testing('min')
-
-## set up run
+```{r punishment sensitivity recover set up}
+#script
 stanname='beta_mean1beta_PunSens.stan'
 
-stanfile <- file.path(scriptdir, stanname)
+# data 
+flare_data_rec<-list(ntrials=ntrials,nsub=nsub,screamPlus = t(screamPlus), screamMinus= t(screamMinus),ratingsPlus=t(rating_est_plus),ratingsMinus=t(rating_est_minus),cdf_scale=cdf_scale)
+```
 
-flare_data<-list(ntrials=ntrials,nsub=nsub,screamPlus = t(screamPlus), screamMinus= t(screamMinus),ratingsPlus=t(rating_est_plus),ratingsMinus=t(rating_est_minus),cdf_scale=cdf_scale)
 
-flare_fit_rec <- stan(file = stanfile, data = flare_data, iter=chain_iter,warmup = warm_up, chains = chain_n) #add working dir?
+```{r punishment sensitivity recover}
 
-save(flare_fit_rec, file=file.path(datadir,'flare_fit_2betaMean'))
+flare_fit_rec <- model_run('full',stanname,flare_data_rec)
 
-traceplot(flare_fit_rec,'lp__')
-
-# extract fit data
-summary_flare <- summary(flare_fit_rec)
+## get some basic output descriptions printed to screen
+out_describe(flare_fit_rec,nsub)
 
 ```
 
+
 #### Make alpha / beta datasets p/p
 
-Use the summary of the stan model to extract the different paramters we want to try to use to recreate our data.
+Use the summary of the stan model to extract the different parameters we want to try to use to recreate our data.
 
 ```{r}
 
 params_rec <- summary(flare_fit_rec)
-alpha_est_rec <- data.frame(params_rec$summary[1:342,1])
-beta_rec <- data.frame(params_rec$summary[343:684,1])
-lambda_rec <- data.frame(params_rec$summary[1027:1368,1])
+alpha_est_rec <- data.frame(params_rec$summary[1:nsub,1])
+beta_rec <- data.frame(params_rec$summary[(nsub+1):(nsub*2),1])
+lambda_rec <- data.frame(params_rec$summary[(nsub*3+1):(nsub*4),1])
 
 
 ```
 
 #### Correlate actual ratings with simulated ratings
 
-use the simulated ratings per person that we have derived using our paramters and see how well they align with the real ratings...
+use the simulated ratings per person that we have derived using our parameters and see how well they align with the real ratings...
 
 Only showing the diaganols from corr.test package here to get the important t1 x t1 etc values.
 
@@ -2868,9 +2685,383 @@ Beta is very poorly recovered here. Alpha and Lambda are recovered exceptionally
 
 Will try a quick 2 beta mdoel with punishment sensitivity to see if this improves things. 
 
-## Rating consistency
 
-A parameter that represents the rating consistency for multiple repeated / similar trials. I think it would be best to have one each for the CS+ and CS- given these differ in terms of how similar the trials are (CS- is always un-enforced for example). Can imagine consistency is a paramter that is concistent regardless of reinforcement / stimulus type though, especially in later phases. So worth testing both models.
+
+## Model 9: Punishment sensitivity 2 beta
+
+
+### Model
+
+```{r punishment sensitivity 2 beta set up}
+#script
+stanname='beta_mean1beta_PunSens2Beta.stan'
+
+```
+
+
+```{r punishment sensitivity 2 beta}
+
+flare_fit <- model_run('full',stanname,flare_data)
+
+## get some basic output descriptions printed to screen
+out_describe(flare_fit,nsub)
+
+# extract fit data
+summary_flare <- summary(flare_fit)
+
+```
+
+
+#### Create BIC from log likelihood
+
+```{r}
+## extract log likelihood
+
+flare_loglike <- extract_log_lik(flare_fit, parameter_name = "loglik", merge_chains = TRUE)
+
+#calculate BIC
+
+FLARe_bic<-bic(ntrials,-colMeans(flare_loglike),2) #number of parameters in that model e.g. 4)
+
+## mean BIC as model comparisons tool:
+
+print("Mean Bayesian information criterion for model")
+
+mean(FLARe_bic)
+
+```
+
+#### Add to bar plot
+
+```{r}
+
+mod_comp <- rbind(na.omit(mod_comp),c("Punishment sensitivity 2 beta",mean(FLARe_bic)))
+
+mod_comp$BIC <- odp(as.numeric(mod_comp$BIC))
+
+mod_comp <- as.data.frame(na.omit(mod_comp))
+
+
+## plot function - create plot
+plot_models(mod_comp)
+
+```
+
+### Generate
+##### Make alpha / beta datasets p/p
+
+Use the summary of the stan model to extract the different parameters we want to try to use to recreate our data.
+
+```{r}
+
+params <- summary(flare_fit)
+alpha_est <- data.frame(params$summary[1:nsub,1])
+beta_all <- data.frame(params$summary[(nsub+1):(nsub*3),1])
+lambda <- data.frame(params$summary[(nsub*4+1):(nsub*5),1])
+
+# divide beta into the two...
+
+## p is 1, so the odd rows
+beta_p <- data.frame(beta_all[ c(TRUE,FALSE), ]) # odd rows
+beta_m <- data.frame(beta_all[ !c(TRUE,FALSE), ]) # even rows
+
+names(alpha_est) <- "alpha"
+names(beta_p) <- "beta_plus"
+names(beta_m) <- "beta_minus"
+names(lambda) <- "lambda"
+  
+
+```
+
+##### Initialise empty datasets to hold the predicted ratings
+
+```{r}
+
+rating_est_plus <- data.frame(matrix(ncol=ntrials,nrow=nsub))
+rating_est_minus <- data.frame(matrix(ncol=ntrials,nrow=nsub))
+
+# beta shape parameters
+shape1p <- data.frame(matrix(ncol=ntrials,nrow=nsub))
+shape1m <- data.frame(matrix(ncol=ntrials,nrow=nsub))
+shape2p <- data.frame(matrix(ncol=ntrials,nrow=nsub))
+shape2m <- data.frame(matrix(ncol=ntrials,nrow=nsub))
+
+# V parameters (initialised at random value between 0.5 - 0.05 and 0.5+0.05)
+
+vp <- data.frame(matrix(ncol=ntrials,nrow=nsub))
+vm <- data.frame(matrix(ncol=ntrials,nrow=nsub))
+
+vp[1] <- rnorm(nsub,0.5,0.025)
+vm[1] <- rnorm(nsub,0.5,0.025)
+
+
+# prediction error 
+
+dp <- data.frame(matrix(ncol=(ntrials-1),nrow=nsub)) 
+dm <- data.frame(matrix(ncol=(ntrials-1),nrow=nsub)) 
+
+  
+```
+
+##### Simulate ratings
+
+Use our extracted parameters in place of estimating the same. Use the stan syntax
+
+
+######  Populate our vplus and delta frames
+
+use the alpha parameters we've extracted (alpha_est)
+d == delta (precdiction error)
+v == value (i.e. value for each stimulus)
+
+
+```{r}
+
+for (p in 1:nsub){
+  for (t in 1:(ntrials-1)){
+      dp[p,t] <- screamPlus[p,t]*lambda[p,]-vp[p,t]
+      dm[p,t] <- screamMinus[p,t]*lambda[p,]-vm[p,t]
+      vp[p,t+1] <- vp[p,t]+alpha_est[p,1]*dp[p,t]
+      vm[p,t+1]<- vm[p,t]+alpha_est[p,1]*dm[p,t]
+    }
+}
+
+```
+
+    for (t in 1:ntrials){
+      shape1_Plus[t,p] = VPlus[t,p] * ((VPlus[t,p] * (1-VPlus[t,p])) / beta[p,1]);
+      shape1_Minus[t,p] = VMinus[t,p] * ((VMinus[t,p] * (1-VMinus[t,p])) / beta[p,2]);
+      shape2_Plus[t,p] = (1-VPlus[t,p]) * ((VPlus[t,p] * (1-VPlus[t,p])) / beta[p,1]);
+      shape2_Minus[t,p] = (1-VMinus[t,p]) * ((VMinus[t,p] * (1-VMinus[t,p])) / beta[p,2]);
+
+      ratingsPlus[t,p] ~ beta(shape1_Plus[t,p],shape2_Plus[t,p]);
+      ratingsMinus[t,p] ~ beta(shape1_Minus[t,p],shape2_Minus[t,p]);
+    }
+  }
+}
+
+
+###### populate beta parameter shape frames
+
+Use the new v frames and beta parameters.
+
+Shape 1 and 2 are sufficient parameters for the beta distribution
+
+```{r}
+
+for (p in 1:nsub){
+  
+  for (t in 1:ntrials){
+    
+      shape1p[p,t] = vp[p,t] * ((vp[p,t] * (1-vp[p,t])) / beta_p[p,1])
+      shape2p[p,t] = (1-vp[p,t]) * ((vp[p,t] * (1-vp[p,t])) / beta_p[p,1])
+      shape1m[p,t] = vm[p,t] * ((vm[p,t] * (1-vm[p,t])) / beta_m[p,1])
+      shape2m[p,t] = (1-vm[p,t]) * ((vm[p,t] * (1-vm[p,t])) / beta_m[p,1])
+      
+  }
+}
+  
+
+```
+
+
+###### Estimate ratings
+
+
+trying to use pbeta here (derives the distribution function givemn a set of probabilities) 
+
+For now, setting probabilities between 0 and 1 and taking the average...
+```{r}
+
+
+for (p in 1:nsub){
+  
+  for (t in 1:ntrials){
+    
+    rating_est_plus[p,t] <- mean(rbeta(1000,shape1p[p,t],shape2p[p,t]))
+    rating_est_minus[p,t] <- mean(rbeta(1000,shape1m[p,t],shape2m[p,t]))
+    
+  }
+}
+
+
+```
+
+#### Correlate actual ratings with simulated ratings
+
+use the simulated ratings per person that we have derived using our parameters and see how well they align with the real ratings...
+
+Only showing the diaganols from corr.test package here to get the important t1 x t1 etc values.
+
+```{r}
+
+print("real ratings with estimated ratings: CS MINUS")
+diag(corr.test(rating_est_minus,minus_scaled)$r)
+
+print("real ratings with estimated ratings: CS MINUS (average for all trials)")
+cor(rowMeans(rating_est_minus),rowMeans(minus_scaled))
+
+
+print("real ratings with estimated ratings: CS PLUS")
+diag(corr.test(rating_est_plus,plus_scaled)$r)
+
+print("real ratings with estimated ratings: CS PLUS (average for all trials)")
+cor(rowMeans(rating_est_plus),rowMeans(plus_scaled))
+
+
+```
+
+
+The generating ratings are worse with this model overall.
+
+### Recover
+
+Here we are seeing if we can recover the same estimates using the simulated ratings. Basically run stan but using the estimated ratings instead of the real ones. See if we get the same alpha / beta parameters.
+
+#### run stan model
+
+```{r punishment sensitivity 2beta recover set up}
+#script
+stanname='beta_mean1beta_PunSens2Beta.stan'
+
+# data 
+flare_data_rec<-list(ntrials=ntrials,nsub=nsub,screamPlus = t(screamPlus), screamMinus= t(screamMinus),ratingsPlus=t(rating_est_plus),ratingsMinus=t(rating_est_minus),cdf_scale=cdf_scale)
+```
+
+
+```{r punishment sensitivity 2 beta recover}
+
+flare_fit_rec <- model_run('full',stanname,flare_data_rec)
+
+## get some basic output descriptions printed to screen
+out_describe(flare_fit_rec,nsub)
+
+```
+
+
+#### Make alpha / beta datasets p/p
+
+Use the summary of the stan model to extract the different parameters we want to try to use to recreate our data.
+
+```{r}
+
+
+params_rec <- summary(flare_fit_rec)
+alpha_est_rec <- data.frame(params_rec$summary[1:nsub,1])
+beta_all_rec <- data.frame(params_rec$summary[(nsub+1):(nsub*3),1])
+lambda_rec <- data.frame(params_rec$summary[(nsub*4+1):(nsub*5),1])
+
+# divide beta into the two...
+
+## p is 1, so the odd rows
+beta_p_rec <- data.frame(beta_all_rec[ c(TRUE,FALSE), ]) # odd rows
+beta_m_rec <- data.frame(beta_all_rec[ !c(TRUE,FALSE), ]) # even rows
+
+names(alpha_est_rec) <- "alpha"
+names(beta_p_rec) <- "beta_plus"
+names(beta_m_rec) <- "beta_minus"
+names(lambda_rec) <- "lambda"
+  
+
+```
+
+#### Correlate actual ratings with simulated ratings
+
+use the simulated ratings per person that we have derived using our parameters and see how well they align with the real ratings...
+
+Only showing the diaganols from corr.test package here to get the important t1 x t1 etc values.
+
+```{r}
+
+print("original with recovered: ALPHA")
+diag(corr.test(alpha_est_rec,alpha_est)$r)
+
+print("original with recovered: BETA PLUS")
+diag(corr.test(beta_p_rec,beta_p)$r)
+
+print("original with recovered: BETA MINUS")
+diag(corr.test(beta_m_rec,beta_m)$r)
+
+print("original with recovered: LAMBDA")
+diag(corr.test(lambda_rec,lambda)$r)
+
+```
+
+Interestingly this is much worse for the lambda. Also not great for beta. Only alpha remains ok. So overall the 1 beta is probably better even though the BIC is *slightly* worse.
+
+# Dual learning 
+
+## Model 10: dual learning + punishment sensitivity ( 1 beta)
+
+a la Toby paper - dual learning model.
+
+Allows the stimuli to update based on the other stimulus outcomes.
+
+This version also includes the punishment sensitivity multiplier as this was best so far
+
+
+### Model
+
+```{r dual learn set up}
+#script
+stanname='beta_DualLearn_PunSens_1beta.stan'
+
+```
+
+
+```{r dual learn}
+
+flare_fit <- model_run('min',stanname,flare_data)
+
+## get some basic output descriptions printed to screen
+out_describe(flare_fit,nsub)
+
+# extract fit data
+summary_flare <- summary(flare_fit)
+
+```
+
+
+#### Create BIC from log likelihood
+
+```{r}
+## extract log likelihood
+
+flare_loglike <- extract_log_lik(flare_fit, parameter_name = "loglik", merge_chains = TRUE)
+
+#calculate BIC
+
+FLARe_bic<-bic(ntrials,-colMeans(flare_loglike),2) #number of parameters in that model e.g. 4)
+
+## mean BIC as model comparisons tool:
+
+print("Mean Bayesian information criterion for model")
+
+mean(FLARe_bic)
+
+```
+
+#### Add to bar plot
+
+```{r}
+
+mod_comp <- rbind(na.omit(mod_comp),c("Dual Learning",mean(FLARe_bic)))
+
+mod_comp$BIC <- odp(as.numeric(mod_comp$BIC))
+
+mod_comp <- as.data.frame(na.omit(mod_comp))
+
+
+## plot function - create plot
+plot_models(mod_comp)
+
+```
+
+
+
+# Rating consistency
+
+A parameter that represents the rating consistency for multiple repeated / similar trials. I think it would be best to have one each for the CS+ and CS- given these differ in terms of how similar the trials are (CS- is always un-enforced for example). Can imagine consistency is a parameter that is concistent regardless of reinforcement / stimulus type though, especially in later phases. So worth testing both models.
 
 A similar parameter is [used in the charpentier et al. paper](https://f1000.com/work/item/6707134/resources/5864774/pdf) (see the last page before the references).
 
@@ -2884,43 +3075,29 @@ where $$\mu = logit\\sensitivty$$
 Where logit sensitivity effectively means consistency of rating consistency; higher valued should mean greater consistency.
 
 
-```{r}
+### Model
 
-## decide testing rate (min,med,max or off)
-testing('min')
-
-## set up run
+```{r consistency set up}
+#script
 stanname='beta_mean1beta_Consistency.stan'
 
-stanfile <- file.path(scriptdir, stanname)
+```
 
-flare_data<-list(ntrials=ntrials,nsub=nsub,screamPlus = t(screamPlus), screamMinus= t(screamMinus),ratingsPlus=t(plus_scaled),ratingsMinus=t(minus_scaled))
 
-flare_fit <- stan(file = stanfile, data = flare_data, iter=chain_iter, chains = chain_n) #add working dir?
+```{r consistency}
 
-save(flare_fit, file=file.path(datadir,'flare_fit_test'))
+flare_fit <- model_run('min',stanname,flare_data)
 
-traceplot(flare_fit,'lp__')
+## get some basic output descriptions printed to screen
+out_describe(flare_fit,nsub)
 
 # extract fit data
-summary_flare_con <- summary(flare_fit)
-
-# extract model summary data
-
-#flare_loglike<- extract_log_lik(flare_fit, parameter_name = "loglik", merge_chains = TRUE)
-
-
-```
-
-```{r}
-## get some basic output descriptions printed to screen
-
-out_describe(summary_flare_con,342)
+summary_flare <- summary(flare_fit)
 
 ```
 
 
-The alpha parameter variance is normal (mean 0.4 and sd 0.12). Beta is much more bounded now though (combined across both stimuli mean 0.79, sd=1.6) over 4000 iterations on 4 chains.
+BIC is terrible
 
 
 #### Create BIC from log likelihood
@@ -2928,11 +3105,11 @@ The alpha parameter variance is normal (mean 0.4 and sd 0.12). Beta is much more
 ```{r}
 ## extract log likelihood
 
-flare_loglike_con <- extract_log_lik(flare_fit, parameter_name = "loglik", merge_chains = TRUE)
+flare_loglike <- extract_log_lik(flare_fit, parameter_name = "loglik", merge_chains = TRUE)
 
 #calculate BIC
 
-FLARe_bic<-bic(ntrials,-colMeans(flare_loglike_con),2) #number of parameters in that model e.g. 4)
+FLARe_bic<-bic(ntrials,-colMeans(flare_loglike),2) #number of parameters in that model e.g. 4)
 
 ## mean BIC as model comparisons tool:
 
@@ -2945,7 +3122,7 @@ mean(FLARe_bic)
 
 ```{r}
 
-mod_comp <- rbind(na.omit(mod_comp),c("...Consistency",mean(FLARe_bic)))
+mod_comp <- rbind(na.omit(mod_comp),c("Consistency",mean(FLARe_bic)))
 
 
 mod_comp$BIC <- odp(as.numeric(mod_comp$BIC))
@@ -2959,25 +3136,178 @@ plot_models(mod_comp)
 ```
 
 
-## Generalisation
+# Generalisation
 
-this is similar to Tobys 'leaky betas' I think...
+# NOTE TO SELF::
+
+maybe generalise the prediction error NOT the value (so add some od deltaP to the VMinus calculation....)
+
+## some intro
 
 Basically here we want to capture a parameter that estimates how much the learning from the reinforced stimulus influences responses to the 'safe' stimulus.
 
+Basing my first effort on [Norbury, Robbins & Seymour, 2018](https://f1000.com/work/item/5243419/resources/6038039/pdf), and their finding that there is generalisation based on value and perceptual processes.
+
+From their abstract 
+
+>> "We found that generalization of avoidance could be parsed into perceptual and value-based processes, and further, that value-based generalization could be subdivided into that relating to aversive and neutral feedback".... "Further, generalization from aversive, but not neutral, feedback was associated with self-reported anxiety and intrusive thoughts. These results reveal a set of distinct mechanisms that mediate generalization in avoidance learning, and show how specific individual differences within them can yield anxiety. "
+
+from introduction
+
+>> "It is therefore possible that under-generalization of safety cues, as opposed to over-generalization of aversive cues, might be a contributing factor to susceptibility to disorders such as generalized anxiety"
+
+
+## Equations
+
+I will basically replicate the visual and value generalisation equations.
+
+### Visual (i.e. possible identify confusion over the two stimuli):
+
+$$V_c,_m =0.80*V_C,_m + 0.20*V_C,_p$$
 
 
 
-## Forgetting
 
-this paramter is how much they retain what they learned over previous trials and use it to inform the current rating.
+### Value:
+
+$$G_s = 1/exp(\rho_o)^2 / 2*\delta))$$
+where $_s$ is current stimulus, and $_o$ is the other stimulus. $\rho$ is the parameter governing shape 'spikiness'" $\delta$ is a free parameter that governs the width of the Gaussian function that governs generalisation. This parameter should probably differ depending on trial outcome (scream or neutral) $\delta_s$ and $\delta_n$. 
+
+They authors update their value by multiplying it by the generalisation of the current 'state' (stimulus). i.e. $*G_s$ as the last term. 
+
+First we will use a single $\delta$ value, rather than updating per trial depending on if it is scream + or -
+
+
+So, for ours the following will be added to the punishment sensitivity single beta model.
+
+### One generalisation parameter
+
+Generalisation:
+
+$$G = 1/exp((\rho_m - \rho_p)^2 / (2*\delta^2))$$
+
+### generalisation per stimulus
+
+Generalisation plus:
+
+$$G_p = 1/exp((\rho_m - \rho_p)^2 / (2*\delta^2))$$
+
+Generalisation minus:
+
+$$G_m = 1/exp((\rho_p - \rho_m)^2 / (2*\delta^2))$$
+Value plus:
+
+$$VPlus[t+1,p]=VPlus[t,p]+alpha[p]*PredErrorPlus[t,p]*G_p$$
+Value minus:
+
+$$VMinus[t+1,p]=VMinus[t,p]+alpha[p]*PredErrorMinus[t,p]*G_p$$
+
+
+### additional things to try:
+
+#### dependence on prediction error
+
+$\kappa$ will be a free parameter that indicates difference in dependence on prediction error history, and will make the v updates like so:
+
+
+Value plus:
+
+$$VPlus[t+1,p]=VPlus[t,p]+\kappa*alpha[p]*PredErrorPlus[t,p]*G_p$$
+Value minus:
+
+$$VMinus[t+1,p]=VMinus[t,p]+\kappa*alpha[p]*PredErrorMinus[t,p]*G_p$$
+
+#### updating learning rate per trial, per stimulus
+
+the alpha would become
+
+$$\alpha_t+1 = \eta  |  (PredError-V_p,_t)| + (1-\eta)*\alpha_t$$
+
+
+## Model 11: Visual generalisation
+
+
+
+Allow visual generalistion between to change the value of the stimuli per trial.
+
+Multiply own value by .8 and add the other stimuli value of .2 (see equations above).
+
+### Model
+
+```{r vis gen set up}
+#script
+stanname='beta_Visual_Gen.stan'
+
+```
+
+
+```{r vis gen}
+
+flare_fit <- model_run('min',stanname,flare_data_nolog)
+
+## get some basic output descriptions printed to screen
+out_describe(flare_fit,nsub)
+
+# extract fit data
+summary_flare <- summary(flare_fit)
+
+```
+
+
+#### Create BIC from log likelihood
+
+```{r}
+## extract log likelihood
+
+flare_loglike <- extract_log_lik(flare_fit, parameter_name = "loglik", merge_chains = TRUE)
+
+#calculate BIC
+
+FLARe_bic<-bic(ntrials,-colMeans(flare_loglike),2) #number of parameters in that model e.g. 4)
+
+## mean BIC as model comparisons tool:
+
+print("Mean Bayesian information criterion for model")
+
+mean(FLARe_bic)
+
+```
+
+#### Add to bar plot
+
+```{r}
+
+mod_comp <- rbind(na.omit(mod_comp),c("Visual Generalisation",mean(FLARe_bic)))
+
+mod_comp$BIC <- odp(as.numeric(mod_comp$BIC))
+
+mod_comp <- as.data.frame(na.omit(mod_comp))
+
+
+## plot function - create plot
+plot_models(mod_comp)
+
+```
+
+# avoidance
+
+Usinf volume per trial as an avoidance outcome and modelling as per [Norbury et al](https://f1000.com/work/item/5243419/resources/6038039/pdf) in a sort of diffusion drift way. Basically updating value of avoid or not avoiding where avoid = = volume down per trial.
+
+Might want to use a Pearce-Hall associatbility rule to update the learning rate  here...
+
+>> "According to this rule, the learning rate on each trial is determined by the absolute magnitude of past prediction errors, such that state-action value estimates are updated by more when previous outcomes have been more surprising, and by less when they were less surprising. This allows for learning in terms of modelled value adjustment to be greater when outcomes are more surprising (e.g. at the start of the task), but to be lesser (leading to more stable values) when outcomes are better predicted. A non-constant learning rate also ensures that parameters governing width of value-based generalization, which are assumed to be constant over the course of the task, are identifiable during parameter estimation (see below equations)."
+
+
+# Forgetting
+
+this parameter is how much they retain what they learned over previous trials and use it to inform the current rating.
 
 
 
 
 # to do
 
-*investigte change point detection paramters (when reinforcement changes - i.e. moving acquisition to extinction)
+*investigte change point detection parameters (when reinforcement changes - i.e. moving acquisition to extinction)
   * could do this or model the phases separately - check which best fits
   
 *add priors! These are what you expect the group to look like (i.e alpha is normally distributed around a mean of 0.5 with variance of 10 or something)

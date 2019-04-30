@@ -51,7 +51,7 @@ model {
       deltaPlus[t,p] = screamPlus[t,p]*lambda[p]-VPlus[t,p]; // prediction error calc CS+, multiplied by punishment sensitivty
       deltaMinus[t,p] = screamMinus[t,p]*lambda[p]-VMinus[t,p]; // ditto CS-
       VPlus[t+1,p]=VPlus[t,p]+alpha[p]*deltaPlus[t,p]; // value calc CS+
-      VMinus[t+1,p]=VMinus[t,p]+alpha[p]*deltaPlus[t,p]; // ditto CS-
+      VMinus[t+1,p]=VMinus[t,p]+alpha[p]*deltaMinus[t,p]; // ditto CS-
     }
 
     for (t in 1:ntrials){
@@ -84,7 +84,6 @@ generated quantities { //does the same calculations again for the fitted values
   real deltaPlus[ntrials-1,nsub]; // prediction error for  CS+
   real deltaMinus[ntrials-1,nsub];    // prediction error for CS-
 
-
   for (p in 1:nsub){
     loglik[p]=0;
     VPlus[1,p]=first[p]; // assume that the mid point varies like our ratings. so a range between 0.5-0.0555556 and 0.5+0.0000056
@@ -93,7 +92,7 @@ generated quantities { //does the same calculations again for the fitted values
       deltaPlus[t,p] = screamPlus[t,p]*lambda[p]-VPlus[t,p]; // prediction error calc CS+, multiplied by punishment sensitivty
       deltaMinus[t,p] = screamMinus[t,p]*lambda[p]-VMinus[t,p]; // ditto CS-
       VPlus[t+1,p]=VPlus[t,p]+alpha[p]*deltaPlus[t,p]; // value calc CS+
-      VMinus[t+1,p]=VMinus[t,p]+alpha[p]*deltaPlus[t,p]; // ditto CS-
+      VMinus[t+1,p]=VMinus[t,p]+alpha[p]*deltaMinus[t,p]; // ditto CS-
     }
 
     for (t in 1:ntrials){
